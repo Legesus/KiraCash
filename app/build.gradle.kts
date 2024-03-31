@@ -56,7 +56,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("com.google.firebase:firebase-ml-vision:24.1.0")
+    implementation("com.google.firebase:firebase-ml-vision:24.1.0") {
+        exclude(group = "com.google.android.gms", module = "play-services-vision")
+    }
     implementation("androidx.compose.ui:ui:1.4.3")
     implementation("androidx.compose.ui:ui-tooling:1.6.4")
     implementation("androidx.compose.foundation:foundation:1.6.4")
