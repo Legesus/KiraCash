@@ -1,18 +1,18 @@
 [versions]
 agp = "8.3.1"
 kotlin = "1.9.0"
-coreKtx = "1.10.1"
+coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
-lifecycleRuntimeKtx = "2.6.1"
-activityCompose = "1.7.0"
-composeBom = "2023.08.00"
+lifecycleRuntimeKtx = "2.7.0"
+activityCompose = "1.8.2"
+composeBom = "2024.04.00"
 materialIconsExtended = "1.6.5"
 accompanistSystemUiController = "0.19.0"
-navigationCompose = "2.4.0-alpha10"
-composeMaterial = "1.1.0-beta02"
-composeUiTooling = "1.1.0-beta02"
+navigationCompose = "2.7.7"
+composeMaterial = "1.6.5"
+composeUiTooling = "1.6.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
