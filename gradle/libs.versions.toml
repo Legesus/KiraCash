@@ -10,6 +10,9 @@ activityCompose = "1.7.0"
 composeBom = "2023.08.00"
 materialIconsExtended = "1.6.5"
 accompanistSystemUiController = "0.19.0"
+navigationCompose = "2.4.0-alpha10"
+composeMaterial = "1.1.0-beta02"
+composeUiTooling = "1.1.0-beta02"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -29,6 +32,9 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 accompanist-system-ui-controller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanistSystemUiController" }
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+compose-material = { group = "androidx.compose.material", name = "material", version.ref = "composeMaterial" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "composeUiTooling" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
