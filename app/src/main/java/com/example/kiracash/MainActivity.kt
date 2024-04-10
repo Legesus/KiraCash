@@ -6,8 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,7 +33,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+
 //import org.jetbrains.annotations.ApiStatus.Experimental
 
 class MainActivity : ComponentActivity() {
@@ -48,18 +53,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String) {
-    Text(
-        text = "Hello $name!",
-        color = Color.Blue,
-        fontSize = 30.sp,
-        modifier = Modifier
-            .background(Color.Yellow)
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun HomeScreen() {
@@ -76,7 +69,28 @@ fun HomeScreen() {
                     .fillMaxSize()
                     .padding(padding)
             ) {
+                Text (
+                    modifier = Modifier.padding(16.dp),
+                    text = "KiraCash",
+                    color = Color.Black,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
+                CardSection()
+                Spacer(modifier = Modifier.height(100.dp))
+
+                PersonSection()
+
+                Spacer(modifier = Modifier.height(100.dp))
+                Text (
+                    modifier = Modifier.padding(16.dp),
+                    text = "Quick Action",
+                    color = Color.Black,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                QuickActionsRow()
             }
         }
     }
