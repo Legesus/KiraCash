@@ -65,7 +65,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // Navigation
     implementation(libs.navigation.compose)
+
+    // Compose Material
     implementation(libs.compose.material)
     implementation(libs.compose.ui.tooling)
 
@@ -76,6 +79,4 @@ dependencies {
     implementation(libs.material.icons.extended)
 
     implementation("io.coil-kt:coil-compose:1.4.0")
-
-
 }

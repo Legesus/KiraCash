@@ -15,19 +15,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 
-class MainActivity : ComponentActivity() {
+class DebtMenuActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DebtMenuScreen()
+            val navController = rememberNavController()
+            DebtMenuScreen(navController)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DebtMenuScreen() {
+fun DebtMenuScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -43,7 +46,7 @@ fun DebtMenuScreen() {
             )
         },
         bottomBar = {
-            BottomNavBar()
+            BottomNavBar(navController = navController)
         }
     ) { paddingValues ->
         Column(
@@ -130,6 +133,7 @@ fun ItemsList() {
 
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
-    DebtMenuScreen()
+fun DebtMenuPreview() {
+    val mockNavController = rememberNavController()
+    DebtMenuScreen(navController = mockNavController)
 }

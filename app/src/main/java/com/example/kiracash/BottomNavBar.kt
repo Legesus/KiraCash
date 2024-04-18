@@ -19,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.data.BottomNav
 
 val items = listOf(
@@ -29,9 +31,9 @@ val items = listOf(
     BottomNav("Account", Icons.Rounded.AccountCircle)
 )
 
-@Preview
+
 @Composable
-fun BottomNavBar () {
+fun BottomNavBar(navController: NavHostController) {
     NavigationBar {
         Row (
             modifier = Modifier.background(MaterialTheme.colorScheme.inverseOnSurface)
@@ -39,7 +41,11 @@ fun BottomNavBar () {
             items.forEachIndexed { index, item ->
                 NavigationBarItem(
                     selected = index == 0,
-                    onClick = {},
+                    onClick = {
+                        if (item.title == "Wallet") {
+                            navController.navigate(MainDestinations.DEBT_MENU_ROUTE)
+                        }
+                    },
                     icon = {
                         Icon(
                             imageVector = item.icon,
@@ -55,7 +61,15 @@ fun BottomNavBar () {
                     }
                 )
             }
-
         }
     }
+}
+
+@Preview
+@Composable
+fun PreviewBottomNavBar() {
+    // Create a mock NavController
+    val mockNavController = rememberNavController()
+
+    BottomNavBar(navController = mockNavController)
 }

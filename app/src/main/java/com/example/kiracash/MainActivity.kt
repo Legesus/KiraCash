@@ -37,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 
 //import org.jetbrains.annotations.ApiStatus.Experimental
 
@@ -45,10 +47,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             KiraCashTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    HomeScreen()
-                }
+                NavGraph()
             }
         }
     }
@@ -56,12 +55,18 @@ class MainActivity : ComponentActivity() {
 
 @Preview(showBackground = true)
 @Composable
-fun HomeScreen() {
+fun HomeScreenPreview() {
+    val mockNavController = rememberNavController()
+    HomeScreen(navController = mockNavController)
+}
+
+@Composable
+fun HomeScreen(navController: NavHostController) {
     KiraCashTheme {
         //Greeting("Adam")
         Scaffold (
             bottomBar = {
-                BottomNavBar()
+                BottomNavBar(navController = navController)
             }
         ) { padding ->
 
@@ -117,3 +122,5 @@ fun HomeScreen() {
         }
     }
 }
+
+
