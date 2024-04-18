@@ -23,6 +23,7 @@ import com.example.kiracash.ui.theme.KiraCashTheme
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -78,9 +79,30 @@ fun HomeScreen() {
                 )
 
                 CardSection()
-                Spacer(modifier = Modifier.height(100.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                PersonSection()
+                val people = listOf(
+                    Person(
+                        profilePicture = "person_icon", // Using person icon from extended icons library
+                        debtAmount = 100.0,
+                        cashIn = 200.0,
+                        cashOut = 50.0
+                    ),
+                    Person(
+                        profilePicture = "person_icon", // Using person icon from extended icons library
+                        debtAmount = 200.0,
+                        cashIn = 300.0,
+                        cashOut = 150.0
+                    ),
+                    Person(
+                        profilePicture = "person_icon", // Using person icon from extended icons library
+                        debtAmount = 300.0,
+                        cashIn = 400.0,
+                        cashOut = 250.0
+                    ),
+                )
+
+                PersonSection().PersonSectionContent(people)
 
                 Spacer(modifier = Modifier.height(100.dp))
                 Text (
