@@ -18,32 +18,50 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.data.BottomNav
 
-val items = listOf(
-    BottomNav("Home", Icons.Rounded.Home),
-    BottomNav("Wallet", Icons.Rounded.Wallet),
-    BottomNav("Receipt", Icons.Rounded.QrCode),
-    BottomNav("Monitoring", Icons.Rounded.BarChart),
-    BottomNav("Account", Icons.Rounded.AccountCircle)
+@Composable
+fun NavHostController.currentRoute(): String? {
+    val navBackStackEntry = this.currentBackStackEntryAsState().value
+    return navBackStackEntry?.destination?.route
+}
+
+data class BottomNav(
+    val title: String,
+    val icon: ImageVector,
+    val route: String
 )
 
+val items = listOf(
+    BottomNav("Home", Icons.Rounded.Home, MainDestinations.HOME_ROUTE),
+    BottomNav("Wallet", Icons.Rounded.Wallet, MainDestinations.DEBT_MENU_ROUTE),
+    BottomNav("Receipt", Icons.Rounded.QrCode, MainDestinations.QR_MENU_ROUTE),
+    BottomNav("Statistic", Icons.Rounded.BarChart, MainDestinations.STATISTIC_SCREEN_ROUTE),
+    BottomNav("Account", Icons.Rounded.AccountCircle, MainDestinations.ACCOUNT_ROUTE)
+)
 
 @Composable
 fun BottomNavBar(navController: NavHostController) {
+    val currentRoute = navController.currentRoute()
     NavigationBar {
         Row (
             modifier = Modifier.background(MaterialTheme.colorScheme.inverseOnSurface)
         ) {
-            items.forEachIndexed { index, item ->
+            items.forEach { item ->
                 NavigationBarItem(
-                    selected = index == 0,
+                    selected = currentRoute == item.route,
                     onClick = {
-                        if (item.title == "Wallet") {
-                            navController.navigate(MainDestinations.DEBT_MENU_ROUTE)
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     },
                     icon = {

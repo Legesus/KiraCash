@@ -79,4 +79,9 @@ dependencies {
     implementation(libs.material.icons.extended)
 
     implementation("io.coil-kt:coil-compose:1.4.0")
+    
+    // Machine Learning OCR
+
+    implementation("com.google.mlkit:linkfirebase:16.0.0")
+    implementation("com.google.mlkit:text-recognition:16.0.0")
 }
