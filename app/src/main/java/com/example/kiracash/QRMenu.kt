@@ -60,6 +60,16 @@ fun OCRScreen(navController: NavHostController) {
         }
     )
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            launcher.launch(null)
+        } else {
+            // Handle permission denial (not implemented here)
+        }
+    }
+
     val hasCameraPermission = ContextCompat.checkSelfPermission(
         context,
         Manifest.permission.CAMERA
@@ -96,7 +106,7 @@ fun OCRScreen(navController: NavHostController) {
                     if (hasCameraPermission) {
                         launcher.launch(null)
                     } else {
-                        // Handle permission request (not implemented here)
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
