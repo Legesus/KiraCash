@@ -1,7 +1,7 @@
 package com.example.kiracash
 
+import OCRMenu
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -34,7 +34,7 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
             ProfileScreen(navController = navController)
         }
         composable(MainDestinations.QR_MENU_ROUTE) {
-            OCRScreen(navController = navController)
+            OCRMenu(navController = navController)
         }
     }
 

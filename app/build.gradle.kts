@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("com.google.devtools.ksp") version "1.9.24-1.0.20"
 }
 
 android {
@@ -37,13 +38,17 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+configurations.all {
+    exclude(group = "com.intellij", module = "annotations")
 }
 
 dependencies {
@@ -78,10 +83,23 @@ dependencies {
     // Extended Icons
     implementation(libs.material.icons.extended)
 
-    implementation("io.coil-kt:coil-compose:1.4.0")
+    implementation(libs.coil.compose)
     
     // Machine Learning OCR
 
-    implementation("com.google.mlkit:linkfirebase:16.0.0")
-    implementation("com.google.mlkit:text-recognition:16.0.0")
+    implementation(libs.linkfirebase)
+    implementation(libs.text.recognition)
+
+    // Room Database
+    implementation (libs.androidx.room.runtime)
+    implementation (libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
+    implementation (libs.androidx.room.ktx)
+
+    // Livecycle ViewModel
+    implementation(libs.lifecycle.viewmodel.compose)
+
+
+    implementation(libs.androidx.runtime.livedata) // replace with your Compose version
+    implementation(libs.kotlinx.coroutines.android) // replace with your Coroutines version
 }

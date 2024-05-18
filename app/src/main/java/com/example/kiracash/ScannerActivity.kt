@@ -1,61 +1,81 @@
-package com.example.kiracash
-
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.example.kiracash.ScannerViewModel
+import kotlinx.coroutines.launch
+import java.io.Serializable
 
-class OCRActivity : ComponentActivity() {
+class ScannerActivity : ComponentActivity() {
+
+    private val viewModel: ScannerViewModel by lazy {
+        ScannerViewModel(application)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            OCRScreen(navController = rememberNavController())
+            ScannerScreen(viewModel)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OCRScreen(navController: NavHostController) {
+fun ScannerScreen(viewModel: ScannerViewModel) {
     val context = LocalContext.current
-    var recognizedText by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    val recognizedText by viewModel.recognizedText.observeAsState("")
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
         onResult = { imageBitmap ->
             if (imageBitmap != null) {
-                val image = InputImage.fromBitmap(imageBitmap, 0)
-                val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-                recognizer.process(image)
-                    .addOnSuccessListener { visionText ->
-                        recognizedText = visionText.text
+                viewModel.recognizeTextFromImage(
+                    imageBitmap = imageBitmap,
+                    onSuccess = { text ->
+                        coroutineScope.launch {
+                            viewModel.updateRecognizedText(text)
+                        }
+                    },
+                    onFailure = { e ->
+                        // Handle failure
                     }
-                    .addOnFailureListener { e ->
-                        Log.e("OCRScreen", "Text recognition failed", e)
-                    }
+                )
             }
         }
     )
@@ -66,7 +86,7 @@ fun OCRScreen(navController: NavHostController) {
         if (isGranted) {
             launcher.launch(null)
         } else {
-            // Handle permission denial (not implemented here)
+            // Handle permission denial
         }
     }
 
@@ -88,9 +108,6 @@ fun OCRScreen(navController: NavHostController) {
                     containerColor = Color(0xFF1F1B24)
                 )
             )
-        },
-        bottomBar = {
-            BottomNavBar(navController = navController)
         }
     ) { innerPadding ->
         Column(
@@ -122,13 +139,19 @@ fun OCRScreen(navController: NavHostController) {
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    val intent = Intent(context, ResultActivity::class.java)
+                    intent.putExtra("RECOGNIZED_TEXT", recognizedText as Serializable)
+                    context.startActivity(intent)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
+            ) {
+                Text("View Result", color = Color.White)
+            }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewOCRScreen() {
-    val mockNavController = rememberNavController()
-    OCRScreen(navController = mockNavController)
 }
