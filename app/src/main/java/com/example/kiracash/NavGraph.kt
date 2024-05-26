@@ -1,7 +1,6 @@
 package com.example.kiracash
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -35,6 +34,10 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
         }
         composable(MainDestinations.QR_MENU_ROUTE) {
             OCRScreen(navController = navController)
+        }
+        composable("receiptScreen/{recognizedText}") { backStackEntry ->
+            val recognizedText = backStackEntry.arguments?.getString("recognizedText")
+            ReceiptScreen(recognizedText = recognizedText)
         }
     }
 
