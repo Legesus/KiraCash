@@ -43,9 +43,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.kiracash.model.ReceiptItem
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+
 
 class OCRActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,6 +79,7 @@ fun ReceiptScreen(recognizedText: String?) {
 fun OCRScreen(navController: NavHostController) {
     val context = LocalContext.current
     var recognizedText by remember { mutableStateOf("") }
+    var items by remember { mutableStateOf(emptyList<ReceiptItem>()) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
         onResult = { imageBitmap ->
@@ -85,7 +88,58 @@ fun OCRScreen(navController: NavHostController) {
                 val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
                 recognizer.process(image)
                     .addOnSuccessListener { visionText ->
-                        recognizedText = visionText.text
+                        val resultText = StringBuilder()
+                        val tempItems = mutableListOf<ReceiptItem>()
+
+
+                        // AI-DO Add log.d for the for loops below
+                        for (block in visionText.textBlocks) {
+                        Log.d("OCRScreen", "Processing block: ${block.text}")
+                        for (line in block.lines) {
+                            Log.d("OCRScreen", "Processing line: ${line.text}")
+                            val lineText = line.text
+                            resultText.append(lineText).append("\n")
+                            val receiptItem = parseLineToReceiptItem(lineText)
+                            if (receiptItem != null) {
+                                tempItems.add(receiptItem)
+                            }
+                        }
+                    }
+                        recognizedText = resultText.toString()
+                        items = tempItems
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("OCRScreen", "Text recognition failed", e)
+                    }
+            }
+        }
+    )
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            if (uri != null) {
+                val image = InputImage.fromFilePath(context, uri)
+                val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                recognizer.process(image)
+                    .addOnSuccessListener { visionText ->
+                        val resultText = StringBuilder()
+                        val tempItems = mutableListOf<ReceiptItem>()
+
+                        for (block in visionText.textBlocks) {
+                            Log.d("OCRScreen", "Processing block: ${block.text}")
+                            for (line in block.lines) {
+                                Log.d("OCRScreen", "Processing line: ${line.text}")
+                                val lineText = line.text
+                                resultText.append(lineText).append("\n")
+                                val receiptItem = parseLineToReceiptItem(lineText)
+                                if (receiptItem != null) {
+                                    tempItems.add(receiptItem)
+                                }
+                            }
+                        }
+                        recognizedText = resultText.toString()
+                        items = tempItems
                     }
                     .addOnFailureListener { e ->
                         Log.e("OCRScreen", "Text recognition failed", e)
@@ -148,11 +202,28 @@ fun OCRScreen(navController: NavHostController) {
                 Text("Scan Receipt", color = Color.White)
             }
 
+            // AI-DO Button to upload picture from gallery
             Button(
                 onClick = {
+                    galleryLauncher.launch("image/*")
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
+            ) {
+                Text("Upload Picture from Gallery", color = Color.White)
+            }
+
+            Button(
+                onClick = {
+
+                    // Error handling
+                    if (recognizedText.isEmpty()) {
+                        return@Button
+                    }
                     val route = "receiptScreen/$recognizedText"
                     navController.navigate(route)
+
                 },
+
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
             ) {
                 Text("Extracted Receipt", color = Color.White)
@@ -166,7 +237,20 @@ fun OCRScreen(navController: NavHostController) {
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
+
+            ReceiptItemsList(items)
         }
+    }
+}
+
+private fun parseLineToReceiptItem(lineText: String): ReceiptItem? {
+    val itemPattern = Regex("""(\d+)\s+(.*?)\s+\(N\)\s+@(\d+\.\d{2})""")
+    val matchResult = itemPattern.find(lineText)
+    return if (matchResult != null) {
+        val (quantity, description, price) = matchResult.destructured
+        ReceiptItem(quantity.toInt(), description, price.toDouble())
+    } else {
+        null
     }
 }
 
