@@ -231,12 +231,8 @@ fun OCRScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = recognizedText,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+
+            // AI-TO Create a list composable that displays every item in the receipt with its corresponding price
 
             ReceiptItemsList(items)
         }
@@ -246,14 +242,24 @@ fun OCRScreen(navController: NavHostController) {
 private fun parseLineToReceiptItem(lineText: String): ReceiptItem? {
     val itemPattern = Regex("""(\d+)\s+(.*?)\s+\(N\)\s+@(\d+\.\d{2})""")
     val matchResult = itemPattern.find(lineText)
+
+    // Log the line of text
+    Log.d("parseLineToReceiptItem", "Processing line: $lineText")
+
     return if (matchResult != null) {
         val (quantity, description, price) = matchResult.destructured
+
+        // Log the parsed values
+        Log.d("parseLineToReceiptItem", "Parsed values: quantity=$quantity, description=$description, price=$price")
+
         ReceiptItem(quantity.toInt(), description, price.toDouble())
     } else {
+        // Log that the line could not be parsed
+        Log.d("parseLineToReceiptItem", "Could not parse line: $lineText")
+
         null
     }
 }
-
 @Preview(showBackground = true)
 @Composable
 fun PreviewOCRScreen() {
