@@ -35,10 +35,6 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
         composable(MainDestinations.QR_MENU_ROUTE) {
             OCRScreen(navController = navController)
         }
-        composable("receiptScreen/{recognizedText}") { backStackEntry ->
-            val recognizedText = backStackEntry.arguments?.getString("recognizedText")
-            ReceiptScreen(recognizedText = recognizedText)
-        }
     }
 
 }
