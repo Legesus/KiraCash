@@ -57,15 +57,15 @@ class OCRActivity : ComponentActivity() {
 fun OCRScreen(navController: NavHostController) {
     val context = LocalContext.current
     val imageProcessor = remember { ImageProcessor(context) }
-    val recognizedText = remember { mutableStateOf("") }
+    val jsonString = remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
         onResult = { imageBitmap ->
             if (imageBitmap != null) {
                 CoroutineScope(Dispatchers.IO).launch {
-                    val result = imageProcessor.processImage(imageBitmap)
-                    recognizedText.value = result
+                    imageProcessor.processImage(imageBitmap)
+                    jsonString.value = imageProcessor.getJsonString()
                 }
             }
         }
@@ -77,8 +77,7 @@ fun OCRScreen(navController: NavHostController) {
             if (uri != null) {
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 CoroutineScope(Dispatchers.IO).launch {
-                    val result = imageProcessor.processImage(bitmap)
-                    recognizedText.value = result
+                    imageProcessor.processImage(bitmap)
                 }
             }
         }
@@ -149,9 +148,7 @@ fun OCRScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
-            // AI-DO Displays the text from the receipt results via Gemini API
-            Text(text = recognizedText.value)
+            Text(jsonString.value, color = Color.White)
         }
     }
 }
