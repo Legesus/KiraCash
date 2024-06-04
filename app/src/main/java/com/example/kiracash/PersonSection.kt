@@ -1,7 +1,14 @@
 package com.example.kiracash
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,16 +19,22 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
+import com.example.kiracash.model.AppDatabase
+import kotlinx.coroutines.launch
 
 data class Person(
     val profilePicture: String, // URL or resource ID
-    val debtAmount: Double,
+    val name: String,
     val cashIn: Double,
     val cashOut: Double
 )
@@ -59,11 +72,11 @@ fun PersonRow(person: Person) {
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(text = "${person.debtAmount}", fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = "Cash In: ${person.cashIn}")
-                Text(text = "Cash Out: ${person.cashOut}")
+                Text(text = "${person.name}")
+                Text(text = "Paid: ${person.cashIn}")
+                Text(text = "Owe: ${person.cashOut}")
             }
         }
     }
@@ -72,22 +85,55 @@ fun PersonRow(person: Person) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewPersonSectionContent() {
-    val people = listOf(
-        Person(
-            profilePicture = "", // Add a valid URL or resource ID here
-            debtAmount = 100.0,
-            cashIn = 200.0,
-            cashOut = 50.0
-        )
-        // Add more Person objects here if needed
-    )
-    PersonSection().PersonSectionContent(people)
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val walletDao = db.walletDao()
+
+    val people = remember { mutableStateOf(listOf<Person>()) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(key1 = Unit) {
+        scope.launch {
+            val wallets = walletDao.getAllWallets()
+            people.value = wallets.map { wallet ->
+                Person(
+                    profilePicture = "person_icon", // Using person icon from extended icons library
+                    name = wallet.owner,
+                    cashIn = wallet.amountPaid,
+                    cashOut = wallet.amountOwe
+                )
+            }
+        }
+    }
+
+    PersonList(people.value, Modifier.padding(16.dp))
 }
 
 class PersonSection {
 
     @Composable
-    fun PersonSectionContent(people: List<Person>) {
-        PersonList(people, Modifier.padding(16.dp))
+    fun PersonSectionContent() {
+        val context = LocalContext.current
+        val db = AppDatabase.getDatabase(context)
+        val walletDao = db.walletDao()
+
+        val people = remember { mutableStateOf(listOf<Person>()) }
+        val scope = rememberCoroutineScope()
+
+        LaunchedEffect(key1 = Unit) {
+            scope.launch {
+                val wallets = walletDao.getAllWallets()
+                people.value = wallets.map { wallet ->
+                    Person(
+                        profilePicture = "person_icon", // Using person icon from extended icons library
+                        name = wallet.owner,
+                        cashIn = wallet.amountPaid,
+                        cashOut = wallet.amountOwe
+                    )
+                }
+            }
+        }
+
+        PersonList(people.value, Modifier.padding(16.dp))
     }
 }
