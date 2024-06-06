@@ -1,6 +1,5 @@
 package com.example.kiracash
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -81,6 +80,5 @@ fun CardSection() {
     Column {
         CardItem("Expenses", 24.0f)
         CardItem("Income", 25.0f)
-        CardItem("Debt", 10.0f, isDebtPositive = true)
     }
 }

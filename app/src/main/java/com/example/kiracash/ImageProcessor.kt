@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.Item
 import com.google.ai.client.generativeai.GenerativeModel
@@ -24,6 +25,7 @@ class ImageProcessor(context: Context) {
     private var jsonString = ""
 
     val bitmap2 = BitmapFactory.decodeResource(context.resources, R.drawable.testreceipt)
+    val itemsState = mutableStateOf<List<Item>>(emptyList())
 
     suspend fun processImage(bitmap: Bitmap): List<Item> {
         return CoroutineScope(Dispatchers.IO).async {
@@ -52,9 +54,29 @@ class ImageProcessor(context: Context) {
                 Log.d("ImageProcessor", "Parsing response")
                 val geminiResponse = Gson().fromJson(cleanJson, GeminiResponse::class.java)
 
+                // Log the parsed response for debugging
+                Log.d("ImageProcessor", "Parsed response: $geminiResponse")
+
                 // Convert the GeminiItems to Items and insert them into the database
                 Log.d("ImageProcessor", "Converting and inserting items into database")
+
+                // Log geminiItems for debugging
+                Log.d("ImageProcessor", "GeminiItems: ${geminiResponse.items}")
+
+                // Log geminiItem.name and geminiItem.price for debugging
+                geminiResponse.items.forEach { geminiItem ->
+                    Log.d("ImageProcessor", "GeminiItem: ${geminiItem.name}, ${geminiItem.price}")
+                }
+
                 val items = geminiResponse.items.map { geminiItem -> Item(name = geminiItem.name, price = geminiItem.price) }
+
+                // Log items for debugging
+                Log.d("ImageProcessor", "AI Items: $items")
+
+                itemsState.value = items
+
+                // Log itemState for debugging
+                Log.d("ImageProcessor", "AI ItemState: ${itemsState.value}")
 
                 items // Return items from the async block
 

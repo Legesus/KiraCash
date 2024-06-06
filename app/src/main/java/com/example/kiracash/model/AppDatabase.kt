@@ -5,11 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Item::class, Receipt::class, Wallet::class, ReceiptItemJoin::class, WalletItemJoin::class], version = 2)
+@Database(entities = [Receipt::class, Item::class, Wallet::class, WalletItemJoin::class, ReceiptItemJoin::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun itemDao(): ItemDao
     abstract fun receiptDao(): ReceiptDao
+    abstract fun itemDao(): ItemDao
     abstract fun walletDao(): WalletDao
+    abstract fun walletItemJoinDao(): WalletItemJoinDao
     abstract fun receiptItemJoinDao(): ReceiptItemJoinDao
 
     companion object {
@@ -21,8 +22,8 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "receipt_database"
-                ).fallbackToDestructiveMigration().build()
+                    "app_database"
+                ).build()
                 INSTANCE = instance
                 instance
             }
