@@ -32,8 +32,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-//import org.jetbrains.annotations.ApiStatus.Experimental
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val tag = "DatabaseOperations"
@@ -45,7 +43,6 @@ class MainActivity : ComponentActivity() {
         }
 
         val db = AppDatabase.getDatabase(this)
-        val walletDao = db.walletDao()
 
         CoroutineScope(Dispatchers.IO).launch {
             val itemDao = db.itemDao()
@@ -99,43 +96,45 @@ class MainActivity : ComponentActivity() {
 
             // Retrieve the inserted wallets to get their IDs
             val insertedWallets = walletDao.getAllWallets()
-            Log.d(tag, "Retrieved wallets: $insertedWallets")
+            insertedWallets.collect { walletsList ->
+                Log.d(tag, "Retrieved wallets: $walletsList")
 
-            // Create ReceiptItemJoin objects to link each item to the receipt
-            val receiptItemJoins = insertedItems.map { item ->
-                ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
+                // Create ReceiptItemJoin objects to link each item to the receipt
+                val receiptItemJoins = insertedItems.map { item ->
+                    ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
+                }
+                Log.d(tag, "ReceiptItemJoins: $receiptItemJoins")
+
+                // Insert joins into the database
+                receiptItemJoins.forEach { receiptItemJoinDao.insert(it) }
+                Log.d(tag, "Inserted receiptItemJoins: $receiptItemJoins")
+
+                // Create WalletItemJoin objects to link each item to its corresponding wallet
+                val johnDoeItems = listOf(insertedItems[0], insertedItems[5], insertedItems[7])
+                val janeDoeItems = listOf(insertedItems[1], insertedItems[3], insertedItems[9])
+                val johnSmithItems = listOf(insertedItems[2], insertedItems[4], insertedItems[6], insertedItems[8])
+
+                val walletItemJoins = mutableListOf<WalletItemJoin>()
+
+                johnDoeItems.forEach { item ->
+                    walletItemJoins.add(WalletItemJoin(walletId = walletsList[0].id, itemId = item.id))
+                }
+                janeDoeItems.forEach { item ->
+                    walletItemJoins.add(WalletItemJoin(walletId = walletsList[1].id, itemId = item.id))
+                }
+                johnSmithItems.forEach { item ->
+                    walletItemJoins.add(WalletItemJoin(walletId = walletsList[2].id, itemId = item.id))
+                }
+
+                // Insert joins into the database
+                walletItemJoins.forEach { walletItemJoinDao.insert(it) }
+                Log.d(tag, "WalletItemJoins: $walletItemJoins")
+
+                // Update each wallet with method in WalletDao
+                walletDao.getWalletsWithTotalAmountPaid().collect { updatedWallets ->
+                    Log.d(tag, "Wallets with total amount paid: $updatedWallets")
+                }
             }
-            Log.d(tag, "ReceiptItemJoins: $receiptItemJoins")
-
-            // Insert joins into the database
-            receiptItemJoins.forEach { receiptItemJoinDao.insert(it) }
-            Log.d(tag, "Inserted receiptItemJoins: $receiptItemJoins")
-
-            // Create WalletItemJoin objects to link each item to its corresponding wallet
-            val johnDoeItems = listOf(insertedItems[0], insertedItems[5], insertedItems[7])
-            val janeDoeItems = listOf(insertedItems[1], insertedItems[3], insertedItems[9])
-            val johnSmithItems = listOf(insertedItems[2], insertedItems[4], insertedItems[6], insertedItems[8])
-
-            val walletItemJoins = mutableListOf<WalletItemJoin>()
-
-            johnDoeItems.forEach { item ->
-                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[0].id, itemId = item.id))
-            }
-            janeDoeItems.forEach { item ->
-                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[1].id, itemId = item.id))
-            }
-            johnSmithItems.forEach { item ->
-                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[2].id, itemId = item.id))
-            }
-
-            // Insert joins into the database
-            walletItemJoins.forEach { walletItemJoinDao.insert(it) }
-            Log.d(tag, "WalletItemJoins: $walletItemJoins")
-
-            // Update each wallet with method in WalletDao
-            walletDao.getWalletsWithTotalAmountPaid()
-            Log.d(tag, "Wallets with total amount paid: ${walletDao.getWalletsWithTotalAmountPaid()}")
-
         }
     }
 }
@@ -150,24 +149,20 @@ fun HomeScreenPreview() {
 @Composable
 fun HomeScreen(navController: NavHostController) {
     KiraCashTheme {
-
         val context = LocalContext.current
         val db = AppDatabase.getDatabase(context)
-        val walletDao = db.walletDao()
 
-        //Greeting("Adam")
-        Scaffold (
+        Scaffold(
             bottomBar = {
                 BottomNavBar(navController = navController)
             }
         ) { padding ->
-
-            Column (
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                Text (
+                Text(
                     modifier = Modifier.padding(16.dp),
                     text = "KiraCash",
                     color = Color.Black,
@@ -175,8 +170,7 @@ fun HomeScreen(navController: NavHostController) {
                     fontWeight = FontWeight.Bold
                 )
 
-                // Text saying Overview with sizes that is a subheading to the heading "KiraCash"
-                Text (
+                Text(
                     modifier = Modifier.padding(16.dp),
                     text = "Overview",
                     color = Color.Black,
@@ -190,7 +184,7 @@ fun HomeScreen(navController: NavHostController) {
                 PersonSection().PersonSectionContent()
 
                 Spacer(modifier = Modifier.height(100.dp))
-                Text (
+                Text(
                     modifier = Modifier.padding(16.dp),
                     text = "Quick Action",
                     color = Color.Black,
@@ -202,5 +196,3 @@ fun HomeScreen(navController: NavHostController) {
         }
     }
 }
-
-

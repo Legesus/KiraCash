@@ -38,10 +38,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +61,6 @@ import com.example.kiracash.model.Receipt
 import com.example.kiracash.model.ReceiptItemJoin
 import com.example.kiracash.model.Wallet
 import com.example.kiracash.model.WalletItemJoin
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -79,7 +80,6 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
     val selectedWallets = remember { mutableStateMapOf<Item, Wallet>() }
 
     Dialog(onDismissRequest = onDismiss) {
-
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -174,27 +174,31 @@ fun OCRScreen(navController: NavHostController) {
     val jsonString = remember { mutableStateOf("") }
     val showDialog = remember { mutableStateOf(false) }
 
-    // Add this line to create an instance of itemDao
-    val itemDao = AppDatabase.getDatabase(context).itemDao()
-
     // Create an instance of WalletDao
     val walletDao = AppDatabase.getDatabase(context).walletDao()
 
     // Create a mutable state to hold the list of wallets
-    val walletsState = remember { mutableStateOf(emptyList<Wallet>()) }
+    var walletsState by remember { mutableStateOf<List<Wallet>>(emptyList()) }
+
+    // Create a coroutine scope
+    val scope = rememberCoroutineScope()
+
+    // Observe the wallets from the database
+    LaunchedEffect(Unit) {
+        scope.launch {
+            walletDao.getAllWallets().collect { wallets ->
+                walletsState = wallets
+            }
+        }
+    }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
         onResult = { imageBitmap ->
             if (imageBitmap != null) {
-                CoroutineScope(Dispatchers.IO).launch {
+                scope.launch(Dispatchers.IO) {
                     imageProcessor.processImage(imageBitmap)
                     jsonString.value = imageProcessor.getJsonString()
-
-                    // Fetch all wallets from the database
-                    walletsState.value = walletDao.getAllWallets()
-
-                    // Add this line to show the dialog after processing the image
                     showDialog.value = true
                 }
             }
@@ -206,13 +210,9 @@ fun OCRScreen(navController: NavHostController) {
         onResult = { uri ->
             if (uri != null) {
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-                CoroutineScope(Dispatchers.IO).launch {
+                scope.launch(Dispatchers.IO) {
                     imageProcessor.processImage(bitmap)
-
-                    // Fetch all wallets from the database
-                    walletsState.value = walletDao.getAllWallets()
-
-                    // Add this line to show the dialog after processing the image
+                    jsonString.value = imageProcessor.getJsonString()
                     showDialog.value = true
                 }
             }
@@ -260,37 +260,27 @@ fun OCRScreen(navController: NavHostController) {
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // Add this block to show the dialog when showDialog is true
             if (showDialog.value) {
-                // Fetch the items and wallets from the database
                 val items = imageProcessor.itemsState.value
-                val wallets = walletsState.value
-
-                // Log the items and wallets
-                Log.d("OCRScreen", "Dialog Items: $items")
-                Log.d("OCRScreen", "Dialog Wallets: $wallets")
+                val wallets = walletsState
 
                 ReceiptDialog(
                     receipt = Receipt(),  // Replace with the actual Receipt
                     items = items,
                     wallets = wallets,
                     onDismiss = {
-                        // Clear the itemsState and dismiss the dialog when the back button is pressed
                         imageProcessor.itemsState.value = emptyList()
                         showDialog.value = false
                     },
                     onFinalize = { selectedWallets ->
-                        CoroutineScope(Dispatchers.IO).launch {
+                        scope.launch(Dispatchers.IO) {
                             val walletItemJoinDao = AppDatabase.getDatabase(context).walletItemJoinDao()
                             val receiptItemJoinDao = AppDatabase.getDatabase(context).receiptItemJoinDao()
 
-                            // Create the Receipt
                             val receipt = Receipt() // Replace with the actual code to create a Receipt
                             val receiptDao = AppDatabase.getDatabase(context).receiptDao()
                             val receiptId = receiptDao.insert(receipt)
 
-                            // Create the WalletItemJoin and ReceiptItemJoin objects
                             selectedWallets.forEach { (item, wallet) ->
                                 val walletJoin = WalletItemJoin(walletId = wallet.id, itemId = item.id)
                                 walletItemJoinDao.insert(walletJoin)
@@ -307,7 +297,6 @@ fun OCRScreen(navController: NavHostController) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-
                 Button(
                     onClick = {
                         if (hasCameraPermission) {

@@ -5,15 +5,16 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WalletDao {
     @Transaction
     @Query("SELECT * FROM items INNER JOIN wallet_item_join ON items.id=wallet_item_join.itemId WHERE wallet_item_join.walletId=:walletId")
-    suspend fun getItemsForWallet(walletId: Int): List<Item>
+    fun getItemsForWallet(walletId: Int): Flow<List<Item>>
 
     @Query("SELECT * FROM wallets")
-    suspend fun getAllWallets(): List<Wallet>
+    fun getAllWallets(): Flow<List<Wallet>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(wallet: Wallet)
@@ -25,5 +26,5 @@ interface WalletDao {
         INNER JOIN items ON wallet_item_join.itemId = items.id 
         GROUP BY wallets.id
     """)
-    suspend fun getWalletsWithTotalAmountPaid(): List<Wallet>
+    fun getWalletsWithTotalAmountPaid(): Flow<List<Wallet>>
 }
