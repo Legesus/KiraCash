@@ -68,7 +68,12 @@ class ImageProcessor(context: Context) {
                     Log.d("ImageProcessor", "GeminiItem: ${geminiItem.name}, ${geminiItem.price}")
                 }
 
-                val items = geminiResponse.items.map { geminiItem -> Item(name = geminiItem.name, price = geminiItem.price) }
+                // Convert the GeminiItems to Items and insert them into the database
+                val items = geminiResponse.items.map { geminiItem ->
+                    val item = Item(name = geminiItem.name, price = geminiItem.price)
+                    val id = itemDao.insert(item)  // Insert the item into the database
+                    item.copy(id = id.toInt())  // Use the id returned by the database
+                }
 
                 // Log items for debugging
                 Log.d("ImageProcessor", "AI Items: $items")

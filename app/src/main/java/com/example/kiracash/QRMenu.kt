@@ -152,10 +152,16 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                     }
                 }
 
+
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = { onFinalize(selectedWallets) },
+                    onClick = {
+                        Log.d("ReceiptDialog", "Size of selectedWallets: ${selectedWallets.size}")
+                        onFinalize(selectedWallets)
+                        onDismiss()  // Dismiss the dialog after finalizing
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
@@ -273,22 +279,35 @@ fun OCRScreen(navController: NavHostController) {
                         showDialog.value = false
                     },
                     onFinalize = { selectedWallets ->
+                        Log.d("ReceiptDialog", "onFinalize started with selectedWallets: $selectedWallets")
                         scope.launch(Dispatchers.IO) {
+                            Log.d("ReceiptDialog", "Inside coroutine scope")
                             val walletItemJoinDao = AppDatabase.getDatabase(context).walletItemJoinDao()
+                            Log.d("ReceiptDialog", "walletItemJoinDao initialized")
                             val receiptItemJoinDao = AppDatabase.getDatabase(context).receiptItemJoinDao()
+                            Log.d("ReceiptDialog", "receiptItemJoinDao initialized")
 
                             val receipt = Receipt() // Replace with the actual code to create a Receipt
+                            Log.d("ReceiptDialog", "Receipt created: $receipt")
                             val receiptDao = AppDatabase.getDatabase(context).receiptDao()
+                            Log.d("ReceiptDialog", "receiptDao initialized")
                             val receiptId = receiptDao.insert(receipt)
+                            Log.d("ReceiptDialog", "Receipt inserted with id: $receiptId")
 
                             selectedWallets.forEach { (item, wallet) ->
+                                Log.d("ReceiptDialog", "Processing item: $item and wallet: $wallet")
                                 val walletJoin = WalletItemJoin(walletId = wallet.id, itemId = item.id)
+                                Log.d("ReceiptDialog", "walletJoin created: $walletJoin")
                                 walletItemJoinDao.insert(walletJoin)
+                                Log.d("ReceiptDialog", "walletJoin inserted")
 
                                 val receiptJoin = ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
+                                Log.d("ReceiptDialog", "receiptJoin created: $receiptJoin")
                                 receiptItemJoinDao.insert(receiptJoin)
+                                Log.d("ReceiptDialog", "receiptJoin inserted")
                             }
                         }
+                        Log.d("ReceiptDialog", "onFinalize ended")
                     }
                 )
             }

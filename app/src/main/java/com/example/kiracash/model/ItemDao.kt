@@ -2,11 +2,16 @@ package com.example.kiracash.model
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 
 @Dao
 interface ItemDao {
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(item: Item): Long  // Make insert return the id
+
     @Insert
     suspend fun insertAll(items: List<Item>)
 
