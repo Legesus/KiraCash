@@ -87,7 +87,8 @@ class MainActivity : ComponentActivity() {
             val wallets = listOf(
                 Wallet(owner = "John Doe", amountPaid = 0.0, amountOwe = 0.0),
                 Wallet(owner = "Jane Doe", amountPaid = 0.0, amountOwe = 0.0),
-                Wallet(owner = "John Smith", amountPaid = 0.0, amountOwe = 0.0)
+                Wallet(owner = "John Smith", amountPaid = 0.0, amountOwe = 0.0),
+                Wallet(owner = "Myself", amountPaid = 0.0, amountOwe = 0.0)
             )
 
             // Insert wallets into the database

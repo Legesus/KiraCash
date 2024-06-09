@@ -1,5 +1,6 @@
 package com.example.kiracash
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -110,7 +111,8 @@ class PersonSection {
         val walletDao = db.walletDao()
 
         // Collect wallets as a state
-        val walletsFlow = walletDao.getAllWallets().collectAsState(initial = emptyList())
+        val walletsFlow = walletDao.getWalletsWithTotalAmountPaid().collectAsState(initial = emptyList())
+        Log.d("PersonSection", "PersonSection Wallets: ${walletsFlow.value}")
 
         // Map wallets to Person data class
         val people = walletsFlow.value.map { wallet ->
