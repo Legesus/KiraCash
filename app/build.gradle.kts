@@ -112,5 +112,7 @@ dependencies {
     //Google Gemini
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
 
+    // Tehras Chart
+    implementation("com.github.tehras:charts:0.2.4-alpha")
 
 }
