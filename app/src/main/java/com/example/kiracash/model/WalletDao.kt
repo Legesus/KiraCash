@@ -30,4 +30,7 @@ interface WalletDao {
 
     @Query("SELECT id FROM wallets WHERE owner = :walletOwner")
     fun getWalletIdByOwner(walletOwner: String): Flow<Int>
+
+    @Query("SELECT * FROM wallets WHERE owner = :walletOwner")
+    fun getWalletByOwner(walletOwner: String): Flow<Wallet>
 }
