@@ -48,15 +48,17 @@ fun ProfileScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Profile", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = Color.White)
-                    }
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Profile Menu",
+                        color = Color.White,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF181829)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF1C1B22)
                 )
             )
         },
@@ -69,9 +71,11 @@ fun ProfileScreen(navController: NavHostController) {
                 .padding(paddingValues)
                 .fillMaxSize()
                 .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()

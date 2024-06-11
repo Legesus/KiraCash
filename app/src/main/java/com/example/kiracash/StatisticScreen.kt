@@ -69,14 +69,16 @@ fun StatisticScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Statistic Menu", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = Color.White)
-                    }
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Statistic Menu",
+                        color = Color.White,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF1C1B22)
                 )
             )
@@ -92,6 +94,7 @@ fun StatisticScreen(navController: NavHostController) {
                 .background(Color(0xFF1C1B24)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             // Title and Chart
             Text(
                 text = "Statistic",

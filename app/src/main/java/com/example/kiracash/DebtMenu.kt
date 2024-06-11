@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,8 +39,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
@@ -62,9 +65,16 @@ class DebtMenuActivity : ComponentActivity() {
 fun DebtMenuScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Wallet", color = Color.White) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Wallet Menu",
+                        color = Color.White,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF1C1B22)
                 )
             )
@@ -121,6 +131,8 @@ fun WalletDropdown() {
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
         var expanded by remember { mutableStateOf(false) }
 
         ExposedDropdownMenuBox(
@@ -135,7 +147,9 @@ fun WalletDropdown() {
                 label = { Text("Wallet") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                modifier = Modifier.menuAnchor().fillMaxWidth()
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
             )
             ExposedDropdownMenu(
                 expanded = expanded,

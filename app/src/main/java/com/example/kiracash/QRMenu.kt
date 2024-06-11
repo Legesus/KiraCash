@@ -36,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,8 +50,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
@@ -242,15 +245,17 @@ fun OCRScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Receipt Menu") },
-                navigationIcon = {
-                    IconButton(onClick = { Log.d("OCRScreen", "Menu button clicked") }) {
-                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
-                    }
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Receipt Menu",
+                        color = Color.White,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF1F1B24)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF1C1B22)
                 )
             )
         },
@@ -266,6 +271,7 @@ fun OCRScreen(navController: NavHostController) {
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             if (showDialog.value) {
                 val items = imageProcessor.itemsState.value
                 val wallets = walletsState
