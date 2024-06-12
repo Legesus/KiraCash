@@ -109,6 +109,7 @@ class PersonSection {
         val context = LocalContext.current
         val db = AppDatabase.getDatabase(context)
         val walletDao = db.walletDao()
+        val paidItemDao = db.paidItemDao()
 
         // Collect wallets with total amount paid as a state
         val walletsPaidFlow = walletDao.getWalletsWithTotalAmountPaid().collectAsState(initial = emptyList())
@@ -116,12 +117,16 @@ class PersonSection {
         // Collect wallets with total amount owe as a state
         val walletsOweFlow = walletDao.getWalletsWithTotalAmountOwe().collectAsState(initial = emptyList())
 
+        // Collect paid items
+        val paidItemsFlow = paidItemDao.getPaidItems().collectAsState(initial = emptyList())
+
         // Map wallets to Person data class
         val people = walletsPaidFlow.value.zip(walletsOweFlow.value) { walletPaid, walletOwe ->
+            val paidItems = paidItemsFlow.value.filter { it.walletId == walletPaid.id }
             Person(
                 walletPicture = walletPaid.walletPicture, // Use walletPicture from the database
                 name = walletPaid.owner,
-                cashIn = walletPaid.amountPaid,
+                cashIn = paidItems.sumOf { it.price },
                 cashOut = walletOwe.amountOwe
             )
         }

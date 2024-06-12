@@ -27,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -62,6 +63,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.Item
+import com.example.kiracash.model.PaidItem
 import com.example.kiracash.model.Receipt
 import com.example.kiracash.model.ReceiptItemJoin
 import com.example.kiracash.model.Wallet
@@ -80,9 +82,9 @@ class OCRActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, onDismiss: () -> Unit, onFinalize: (Map<Item, Wallet>) -> Unit) {
-    // Create a mutable state for each item to hold the selected wallet
-    val selectedWallets = remember { mutableStateMapOf<Item, Wallet>() }
+fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, onDismiss: () -> Unit, onFinalize: (Map<Item, Pair<Wallet, Boolean>>) -> Unit) {
+    // Create a mutable state for each item to hold the selected wallet and isPaid status
+    val selectedWalletsAndPaidStatus = remember { mutableStateMapOf<Item, Pair<Wallet, Boolean>>() }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -119,6 +121,7 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
 
                         var expanded by remember { mutableStateOf(false) }
                         var selectedWallet by remember { mutableStateOf(if (wallets.isNotEmpty()) wallets[0] else null) }
+                        var isPaid by remember { mutableStateOf(false) }
 
                         ExposedDropdownMenuBox(
                             expanded = expanded,
@@ -147,13 +150,22 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                                             selectedWallet = wallet
                                             expanded = false
 
-                                            // Update the selected wallet for this item
-                                            selectedWallets[item] = wallet
+                                            // Update the selected wallet and isPaid status for this item
+                                            selectedWalletsAndPaidStatus[item] = Pair(wallet, isPaid)
                                         },
                                     )
                                 }
                             }
                         }
+
+                        Checkbox(
+                            checked = isPaid,
+                            onCheckedChange = { isChecked ->
+                                isPaid = isChecked
+                                // Update the isPaid status for this item
+                                selectedWallet?.let { selectedWalletsAndPaidStatus[item] = Pair(it, isChecked) }
+                            }
+                        )
                     }
                 }
 
@@ -161,8 +173,8 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
 
                 Button(
                     onClick = {
-                        Log.d("ReceiptDialog", "Size of selectedWallets: ${selectedWallets.size}")
-                        onFinalize(selectedWallets)
+                        Log.d("ReceiptDialog", "Size of selectedWalletsAndPaidStatus: ${selectedWalletsAndPaidStatus.size}")
+                        onFinalize(selectedWalletsAndPaidStatus)
                         onDismiss()  // Dismiss the dialog after finalizing
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
@@ -415,21 +427,27 @@ fun OCRScreen(navController: NavHostController) {
                             imageProcessor.itemsState.value = emptyList()
                             showDialog.value = false
                         },
-                        onFinalize = { selectedWallets ->
+                        onFinalize = { selectedWalletsAndPaidStatus ->
                             scope.launch(Dispatchers.IO) {
                                 val walletItemJoinDao = AppDatabase.getDatabase(context).walletItemJoinDao()
                                 val receiptItemJoinDao = AppDatabase.getDatabase(context).receiptItemJoinDao()
+                                val paidItemDao = AppDatabase.getDatabase(context).paidItemDao()
 
                                 val receipt = Receipt() // Replace with the actual code to create a Receipt
                                 val receiptDao = AppDatabase.getDatabase(context).receiptDao()
                                 val receiptId = receiptDao.insert(receipt)
 
-                                selectedWallets.forEach { (item, wallet) ->
+                                selectedWalletsAndPaidStatus.forEach { (item, pair) ->
+                                    val (wallet, isPaid) = pair
+
                                     val walletJoin = WalletItemJoin(walletId = wallet.id, itemId = item.id)
                                     walletItemJoinDao.insert(walletJoin)
 
                                     val receiptJoin = ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
                                     receiptItemJoinDao.insert(receiptJoin)
+
+                                    val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = wallet.id)
+                                    paidItemDao.insert(paidItem)
                                 }
                             }
                         }

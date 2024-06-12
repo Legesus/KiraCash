@@ -1,6 +1,7 @@
 package com.example.kiracash
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -56,11 +57,25 @@ class StatisticScreen : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticScreen(navController: NavHostController) {
+    Log.d("StatisticScreen", "Start of StatisticScreen function")
+
     val context = LocalContext.current
+    Log.d("StatisticScreen", "Got LocalContext: $context")
+
     val walletDao = AppDatabase.getDatabase(context).walletDao()
+    Log.d("StatisticScreen", "Got walletDao: $walletDao")
+
+    val paidItemDao = AppDatabase.getDatabase(context).paidItemDao()
+    Log.d("StatisticScreen", "Got paidItemDao: $paidItemDao")
+
     var wallets by remember { mutableStateOf(emptyList<Wallet>()) }
+    Log.d("StatisticScreen", "Initialized wallets state")
+
     var totalAmount by remember { mutableStateOf(0.0) }
+    Log.d("StatisticScreen", "Initialized totalAmount state")
+
     var showAmountOwe by remember { mutableStateOf(false) }
+    Log.d("StatisticScreen", "Initialized showAmountOwe state")
 
     LaunchedEffect(showAmountOwe) {
         if (showAmountOwe) {
@@ -151,9 +166,10 @@ fun StatisticScreen(navController: NavHostController) {
                 modifier = Modifier.padding(horizontal = 20.dp)
             ) {
                 wallets.forEach { wallet ->
+                    val colorHex = "#" + Integer.toHexString(wallet.walletColor).padStart(6, '0')
                     Text(
                         text = "${wallet.owner}: RM${if (showAmountOwe) wallet.amountOwe else wallet.amountPaid}",
-                        color = Color.White,
+                        color = Color(android.graphics.Color.parseColor(colorHex)),
                         fontSize = 18.sp,
                         textAlign = TextAlign.Start
                     )
