@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -65,9 +66,9 @@ fun PersonRow(person: Person) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = person.name)
-                Text(text = "Paid: ${person.cashIn}")
-                Text(text = "Owe: ${person.cashOut}")
+                Text(text = person.name, color = Color.White)
+                Text(text = "Paid: RM ${person.cashIn}", color = Color.White)
+                Text(text = "Owe: RM ${person.cashOut}", color = Color.White)
             }
         }
     }
