@@ -23,10 +23,19 @@ interface WalletDao {
     SELECT wallets.id, wallets.owner, IFNULL(SUM(items.price), 0) as amountPaid, wallets.amountOwe 
     FROM wallets 
     LEFT JOIN wallet_item_join ON wallets.id = wallet_item_join.walletId 
-    LEFT JOIN items ON wallet_item_join.itemId = items.id 
+    LEFT JOIN items ON wallet_item_join.itemId = items.id
     GROUP BY wallets.id
     """)
     fun getWalletsWithTotalAmountPaid(): Flow<List<Wallet>>
+
+    @Query("""
+    SELECT wallets.id, wallets.owner, wallets.amountPaid, IFNULL(SUM(items.price), 0) as amountOwe 
+    FROM wallets 
+    LEFT JOIN wallet_item_join ON wallets.id = wallet_item_join.walletId 
+    LEFT JOIN items ON wallet_item_join.itemId = items.id
+    GROUP BY wallets.id
+    """)
+    fun getWalletsWithTotalAmountOwe(): Flow<List<Wallet>>
 
     @Query("SELECT id FROM wallets WHERE owner = :walletOwner")
     fun getWalletIdByOwner(walletOwner: String): Flow<Int>

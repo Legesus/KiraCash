@@ -4,11 +4,27 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,7 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
@@ -27,13 +42,8 @@ import com.github.tehras.charts.piechart.PieChart
 import com.github.tehras.charts.piechart.PieChartData
 import com.github.tehras.charts.piechart.animation.simpleChartAnimation
 import com.github.tehras.charts.piechart.renderer.SimpleSliceDrawer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class StatisticScreen : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -49,20 +59,26 @@ fun StatisticScreen(navController: NavHostController) {
     val context = LocalContext.current
     val walletDao = AppDatabase.getDatabase(context).walletDao()
     var wallets by remember { mutableStateOf(emptyList<Wallet>()) }
-    var totalAmountPaid by remember { mutableStateOf(0.0) }
+    var totalAmount by remember { mutableStateOf(0.0) }
+    var showAmountOwe by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
+    LaunchedEffect(showAmountOwe) {
+        if (showAmountOwe) {
+            walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
+                wallets = walletList
+                totalAmount = walletList.sumOf { it.amountOwe }
+            }
+        } else {
             walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
                 wallets = walletList
-                totalAmountPaid = walletList.sumOf { it.amountPaid }
+                totalAmount = walletList.sumOf { it.amountPaid }
             }
         }
     }
 
     val slices = wallets.map { wallet ->
         PieChartData.Slice(
-            value = (wallet.amountPaid / totalAmountPaid).toFloat(),
+            value = if (showAmountOwe) (wallet.amountOwe / totalAmount).toFloat() else (wallet.amountPaid / totalAmount).toFloat(),
             color = Color((0xFF000000..0xFFFFFFFF).random()) // Random color for each slice
         )
     }
@@ -95,6 +111,20 @@ fun StatisticScreen(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
+            // Toggle Button
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("Amount Paid")
+                Switch(
+                    checked = showAmountOwe,
+                    onCheckedChange = { showAmountOwe = it },
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
+                )
+                Text("Amount Owe")
+            }
+
             // Title and Chart
             Text(
                 text = "Statistic",
@@ -121,7 +151,7 @@ fun StatisticScreen(navController: NavHostController) {
             ) {
                 wallets.forEach { wallet ->
                     Text(
-                        text = "${wallet.owner}: RM${wallet.amountPaid}",
+                        text = "${wallet.owner}: RM${if (showAmountOwe) wallet.amountOwe else wallet.amountPaid}",
                         color = Color.White,
                         fontSize = 18.sp,
                         textAlign = TextAlign.Start

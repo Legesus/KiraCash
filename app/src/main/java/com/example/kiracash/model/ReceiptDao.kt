@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReceiptDao {
@@ -18,4 +19,8 @@ interface ReceiptDao {
 
     @Delete
     fun delete(receipt: Receipt)
+
+    // Add this new method
+    @Query("SELECT * FROM receipts")
+    fun getAllReceipts(): Flow<List<Receipt>>
 }

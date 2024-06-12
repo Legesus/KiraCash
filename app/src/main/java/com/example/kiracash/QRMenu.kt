@@ -10,7 +10,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,18 +21,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -40,6 +41,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -155,8 +157,6 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                     }
                 }
 
-
-
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
@@ -175,6 +175,110 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
     }
 }
 
+@Composable
+fun ReceiptItemsDialog(
+    receipt: Receipt,
+    items: List<Item>,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Receipt ID: ${receipt.id}",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                items.forEach { item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${item.name} - RM ${item.price}",
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Close", color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ReceiptHistory(
+    onReceiptClick: (Receipt) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val receiptDao = db.receiptDao()
+
+    val receipts by receiptDao.getAllReceipts().collectAsState(initial = emptyList())
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .background(Color(0xFF1C1B24))
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            text = "Receipt History",
+            color = Color.White,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        receipts.forEach { receipt ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable { onReceiptClick(receipt) },
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF27273F))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Receipt ID: ${receipt.id}",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OCRScreen(navController: NavHostController) {
@@ -182,9 +286,14 @@ fun OCRScreen(navController: NavHostController) {
     val imageProcessor = remember { ImageProcessor(context) }
     val jsonString = remember { mutableStateOf("") }
     val showDialog = remember { mutableStateOf(false) }
+    val showLoading = remember { mutableStateOf(false) }
+
+    val selectedReceipt = remember { mutableStateOf<Receipt?>(null) }
+    val receiptItems = remember { mutableStateOf<List<Item>>(emptyList()) }
 
     // Create an instance of WalletDao
     val walletDao = AppDatabase.getDatabase(context).walletDao()
+    val receiptDao = AppDatabase.getDatabase(context).receiptDao()
 
     // Create a mutable state to hold the list of wallets
     var walletsState by remember { mutableStateOf<List<Wallet>>(emptyList()) }
@@ -206,9 +315,11 @@ fun OCRScreen(navController: NavHostController) {
         onResult = { imageBitmap ->
             if (imageBitmap != null) {
                 scope.launch(Dispatchers.IO) {
-                    imageProcessor.processImage(imageBitmap)
+                    showLoading.value = true  // Show loading dialog
+                    val processedItems = imageProcessor.processImage(imageBitmap)
                     jsonString.value = imageProcessor.getJsonString()
                     showDialog.value = true
+                    showLoading.value = false  // Hide loading dialog
                 }
             }
         }
@@ -220,9 +331,11 @@ fun OCRScreen(navController: NavHostController) {
             if (uri != null) {
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 scope.launch(Dispatchers.IO) {
-                    imageProcessor.processImage(bitmap)
+                    showLoading.value = true  // Show loading dialog
+                    val processedItems = imageProcessor.processImage(bitmap)
                     jsonString.value = imageProcessor.getJsonString()
                     showDialog.value = true
+                    showLoading.value = false  // Hide loading dialog
                 }
             }
         }
@@ -263,92 +376,129 @@ fun OCRScreen(navController: NavHostController) {
             BottomNavBar(navController = navController)
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFF121212))
-                .padding(innerPadding),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(innerPadding)
         ) {
-
-            if (showDialog.value) {
-                val items = imageProcessor.itemsState.value
-                val wallets = walletsState
-
-                ReceiptDialog(
-                    receipt = Receipt(),  // Replace with the actual Receipt
-                    items = items,
-                    wallets = wallets,
-                    onDismiss = {
-                        imageProcessor.itemsState.value = emptyList()
-                        showDialog.value = false
-                    },
-                    onFinalize = { selectedWallets ->
-                        Log.d("ReceiptDialog", "onFinalize started with selectedWallets: $selectedWallets")
-                        scope.launch(Dispatchers.IO) {
-                            Log.d("ReceiptDialog", "Inside coroutine scope")
-                            val walletItemJoinDao = AppDatabase.getDatabase(context).walletItemJoinDao()
-                            Log.d("ReceiptDialog", "walletItemJoinDao initialized")
-                            val receiptItemJoinDao = AppDatabase.getDatabase(context).receiptItemJoinDao()
-                            Log.d("ReceiptDialog", "receiptItemJoinDao initialized")
-
-                            val receipt = Receipt() // Replace with the actual code to create a Receipt
-                            Log.d("ReceiptDialog", "Receipt created: $receipt")
-                            val receiptDao = AppDatabase.getDatabase(context).receiptDao()
-                            Log.d("ReceiptDialog", "receiptDao initialized")
-                            val receiptId = receiptDao.insert(receipt)
-                            Log.d("ReceiptDialog", "Receipt inserted with id: $receiptId")
-
-                            selectedWallets.forEach { (item, wallet) ->
-                                Log.d("ReceiptDialog", "Processing item: $item and wallet: $wallet")
-                                val walletJoin = WalletItemJoin(walletId = wallet.id, itemId = item.id)
-                                Log.d("ReceiptDialog", "walletJoin created: $walletJoin")
-                                walletItemJoinDao.insert(walletJoin)
-                                Log.d("ReceiptDialog", "walletJoin inserted")
-
-                                val receiptJoin = ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
-                                Log.d("ReceiptDialog", "receiptJoin created: $receiptJoin")
-                                receiptItemJoinDao.insert(receiptJoin)
-                                Log.d("ReceiptDialog", "receiptJoin inserted")
-                            }
-                        }
-                        Log.d("ReceiptDialog", "onFinalize ended")
-                    }
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
             ) {
-                Button(
-                    onClick = {
-                        if (hasCameraPermission) {
-                            launcher.launch(null)
-                        } else {
-                            permissionLauncher.launch(Manifest.permission.CAMERA)
+
+                // Include the receipt history below the TopAppBar
+                ReceiptHistory(
+                    onReceiptClick = { receipt ->
+                        scope.launch(Dispatchers.IO) {
+                            val items = receiptDao.getItemsForReceipt(receipt.id)
+                            receiptItems.value = items
+                            selectedReceipt.value = receipt
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
-                    modifier = Modifier.fillMaxWidth(0.55f)
-                ) {
-                    Text("Scan", color = Color.White)
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (showLoading.value) {
+                    LoadingDialog()  // Display the loading dialog
                 }
 
-                Button(
-                    onClick = {
-                        galleryLauncher.launch("image/*")
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
-                    modifier = Modifier.fillMaxWidth(0.55f)
-                ) {
-                    Text("Upload", color = Color.White)
+                if (showDialog.value) {
+                    val items = imageProcessor.itemsState.value
+                    val wallets = walletsState
+
+                    ReceiptDialog(
+                        receipt = Receipt(),  // Replace with the actual Receipt
+                        items = items,
+                        wallets = wallets,
+                        onDismiss = {
+                            imageProcessor.itemsState.value = emptyList()
+                            showDialog.value = false
+                        },
+                        onFinalize = { selectedWallets ->
+                            scope.launch(Dispatchers.IO) {
+                                val walletItemJoinDao = AppDatabase.getDatabase(context).walletItemJoinDao()
+                                val receiptItemJoinDao = AppDatabase.getDatabase(context).receiptItemJoinDao()
+
+                                val receipt = Receipt() // Replace with the actual code to create a Receipt
+                                val receiptDao = AppDatabase.getDatabase(context).receiptDao()
+                                val receiptId = receiptDao.insert(receipt)
+
+                                selectedWallets.forEach { (item, wallet) ->
+                                    val walletJoin = WalletItemJoin(walletId = wallet.id, itemId = item.id)
+                                    walletItemJoinDao.insert(walletJoin)
+
+                                    val receiptJoin = ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
+                                    receiptItemJoinDao.insert(receiptJoin)
+                                }
+                            }
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(jsonString.value, color = Color.White)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(
+                        onClick = {
+                            if (hasCameraPermission) {
+                                launcher.launch(null)
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
+                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    ) {
+                        Text("Scan", color = Color.White)
+                    }
+
+                    Button(
+                        onClick = {
+                            galleryLauncher.launch("image/*")
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
+                        modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    ) {
+                        Text("Upload", color = Color.White)
+                    }
+                }
+            }
+
+            Text(
+                text = jsonString.value,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+            )
+
+            selectedReceipt.value?.let { receipt ->
+                ReceiptItemsDialog(
+                    receipt = receipt,
+                    items = receiptItems.value,
+                    onDismiss = { selectedReceipt.value = null }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LoadingDialog() {
+    Dialog(onDismissRequest = {}) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Black.copy(alpha = 0.1f) // Semi-transparent background
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                CircularProgressIndicator()
             }
         }
     }
