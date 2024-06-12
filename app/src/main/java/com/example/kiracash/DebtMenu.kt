@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -24,6 +24,8 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -46,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
-import com.example.kiracash.model.Item
+import com.example.kiracash.model.PaidItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -100,6 +102,7 @@ fun WalletDropdown() {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val walletDao = db.walletDao()
+    val paidItemDao = db.paidItemDao()
     val coroutineScope = rememberCoroutineScope()
 
     // State to hold list of wallets and the selected wallet
@@ -108,7 +111,10 @@ fun WalletDropdown() {
     var walletId by remember { mutableStateOf(0) }
 
     // State to hold items linked to the selected wallet
-    var items by remember { mutableStateOf(emptyList<Item>()) }
+    var items by remember { mutableStateOf(emptyList<PaidItem>()) }
+
+    // State to toggle between amountPaid and amountOwe
+    var showAmountOwe by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         walletDao.getAllWallets().collect { walletList ->
@@ -117,19 +123,39 @@ fun WalletDropdown() {
                 selectedWallet = wallets[0]
                 coroutineScope.launch(Dispatchers.IO) {
                     walletId = walletDao.getWalletIdByOwner(selectedWallet).first()
-                    items = walletDao.getItemsForWallet(walletId).first()
+                    items = paidItemDao.getAllPaidItems().first().filter { it.walletId == walletId }
                 }
             }
         }
     }
 
     Column {
-        Text(
-            text = "Select Wallet",
-            style = MaterialTheme.typography.headlineSmall,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Select Wallet",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Toggle Switch
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("Paid", color = Color.White)
+                Switch(
+                    checked = showAmountOwe,
+                    onCheckedChange = { showAmountOwe = it },
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
+                )
+                Text("Owe", color = Color.White)
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -163,7 +189,7 @@ fun WalletDropdown() {
                             expanded = false
                             coroutineScope.launch(Dispatchers.IO) {
                                 walletId = walletDao.getWalletIdByOwner(selectedWallet).first()
-                                items = walletDao.getItemsForWallet(walletId).first()
+                                items = paidItemDao.getAllPaidItems().first().filter { it.walletId == walletId }
                             }
                         }
                     )
@@ -173,16 +199,16 @@ fun WalletDropdown() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        ItemsList(items = items)
+        ItemsList(items = items, showAmountOwe = showAmountOwe)
     }
 }
 
 @Composable
-fun ItemsList(items: List<Item>) {
+fun ItemsList(items: List<PaidItem>, showAmountOwe: Boolean) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        items(items) { item ->
+        items(items.filter { it.isPaid != showAmountOwe }) { item ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

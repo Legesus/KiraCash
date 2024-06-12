@@ -57,10 +57,24 @@ class MainActivity : ComponentActivity() {
             val walletDao = db.walletDao()
             val receiptItemJoinDao = db.receiptItemJoinDao()
             val walletItemJoinDao = db.walletItemJoinDao()
-            val paidItemDao = db.paidItemDao()  // New DAO for PaidItem
+            val paidItemDao = db.paidItemDao()
 
             // Delete all data in the database
             db.clearAllTables()
+
+            // Create Wallet objects
+            val wallets = listOf(
+                Wallet(owner = "John Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFF0000),
+                Wallet(owner = "Jane Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x00FF00),
+                Wallet(owner = "John Smith", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x0000FF),
+                Wallet(owner = "Myself", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFFFF00),
+            )
+
+            // Insert wallets into the database
+            wallets.forEach { walletDao.insert(it) }
+
+            // Retrieve the inserted wallets to get their IDs
+            val insertedWallets = walletDao.getAllWallets().first()
 
             // Create Item objects
             val items = listOf(
@@ -76,83 +90,44 @@ class MainActivity : ComponentActivity() {
                 Item(name = "AIR SEJUK", price = 0.30)
             )
 
+            // Insert items into the database
+            itemDao.insertAll(items)
+
             // Create PaidItem objects with half isPaid=true and half isPaid=false
             val paidItems = items.mapIndexed { index, item ->
                 val isPaid = index < items.size / 2
-                val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid)
-                Log.d(tag, "PaidItem: $paidItem, isPaid: $isPaid")
+                val walletId = insertedWallets[index % insertedWallets.size].id
+                val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = walletId)
                 paidItem
             }
 
-            // Insert items into the database
-            itemDao.insertAll(items)
-            Log.d(tag, "Inserted items: $items")
-
             // Insert paid items into the database
             paidItemDao.insertAll(paidItems)
-            Log.d(tag, "Inserted paid items: $paidItems")
 
             // Retrieve the inserted items to get their IDs
             val insertedItems = itemDao.getAll()
-            Log.d(tag, "Retrieved items: $insertedItems")
-
-            // Retrieve the inserted paid items to get their IDs
-            val insertedPaidItems = paidItemDao.getAllPaidItems().first()
-            Log.d(tag, "Retrieved paid items: $insertedPaidItems")
 
             // Create a single Receipt object
             val receipt = Receipt()
 
             // Insert the receipt into the database
             val receiptId = receiptDao.insert(receipt)
-            Log.d(tag, "Inserted receipt ID: $receipt")
-
-            // Create Wallet objects
-            val wallets = listOf(
-                Wallet(owner = "John Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFF0000),
-                Wallet(owner = "Jane Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x00FF00),
-                Wallet(owner = "John Smith", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x0000FF),
-                Wallet(owner = "Myself", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFFFF00),
-            )
-
-            // Insert wallets into the database
-            wallets.forEach { walletDao.insert(it) }
-            Log.d(tag, "Inserted wallets: $wallets")
-
-            // Retrieve the inserted wallets to get their IDs
-            val insertedWallets = walletDao.getAllWallets().first()
-            Log.d(tag, "Retrieved wallets: $insertedWallets")
 
             // Create ReceiptItemJoin objects to link each item to the receipt
             val receiptItemJoins = insertedItems.map { item ->
                 ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
             }
-            Log.d(tag, "ReceiptItemJoins: $receiptItemJoins")
 
             // Insert joins into the database
             receiptItemJoins.forEach { receiptItemJoinDao.insert(it) }
-            Log.d(tag, "Inserted receiptItemJoins: $receiptItemJoins")
 
             // Create WalletItemJoin objects to link each item to its corresponding wallet
-            val johnDoeItems = listOf(insertedItems[0], insertedItems[5], insertedItems[7])
-            val janeDoeItems = listOf(insertedItems[1], insertedItems[3], insertedItems[9])
-            val johnSmithItems = listOf(insertedItems[2], insertedItems[4], insertedItems[6], insertedItems[8])
-
-            val walletItemJoins = mutableListOf<WalletItemJoin>()
-
-            johnDoeItems.forEach { item ->
-                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[0].id, itemId = item.id))
-            }
-            janeDoeItems.forEach { item ->
-                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[1].id, itemId = item.id))
-            }
-            johnSmithItems.forEach { item ->
-                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[2].id, itemId = item.id))
+            val walletItemJoins = insertedItems.mapIndexed { index, item ->
+                WalletItemJoin(walletId = insertedWallets[index % insertedWallets.size].id, itemId = item.id)
             }
 
             // Insert joins into the database
             walletItemJoins.forEach { walletItemJoinDao.insert(it) }
-            Log.d(tag, "WalletItemJoins: $walletItemJoins")
 
             // Update each wallet with method in WalletDao
             walletDao.getWalletsWithTotalAmountPaid().collect { updatedWallets ->

@@ -91,7 +91,7 @@ fun PreviewPersonSectionContent() {
     // Map wallets to Person data class
     val people = walletsPaidFlow.value.zip(walletsOweFlow.value) { walletPaid, walletOwe ->
         Person(
-            walletPicture = walletPaid.walletPicture, // Using person icon from extended icons library
+            walletPicture = walletPaid.walletPicture,
             name = walletPaid.owner,
             cashIn = walletPaid.amountPaid,
             cashOut = walletOwe.amountOwe

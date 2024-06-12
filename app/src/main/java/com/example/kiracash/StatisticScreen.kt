@@ -63,23 +63,24 @@ fun StatisticScreen(navController: NavHostController) {
     var showAmountOwe by remember { mutableStateOf(false) }
 
     LaunchedEffect(showAmountOwe) {
-    if (showAmountOwe) {
-        walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
-            wallets = walletList
-            totalAmount = walletList.sumOf { it.amountOwe }
-        }
-    } else {
-        walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
-            wallets = walletList
-            totalAmount = walletList.sumOf { it.amountPaid }
+        if (showAmountOwe) {
+            walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
+                wallets = walletList
+                totalAmount = walletList.sumOf { it.amountOwe }
+            }
+        } else {
+            walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
+                wallets = walletList
+                totalAmount = walletList.sumOf { it.amountPaid }
+            }
         }
     }
-}
 
     val slices = wallets.map { wallet ->
+        val colorHex = "#" + Integer.toHexString(wallet.walletColor).padStart(6, '0')
         PieChartData.Slice(
             value = if (showAmountOwe) (wallet.amountOwe / totalAmount).toFloat() else (wallet.amountPaid / totalAmount).toFloat(),
-            color = Color((0xFF000000..0xFFFFFFFF).random()) // Random color for each slice
+            color = Color(android.graphics.Color.parseColor(colorHex))
         )
     }
 
@@ -110,7 +111,6 @@ fun StatisticScreen(navController: NavHostController) {
                 .background(Color(0xFF1C1B24)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             // Toggle Button
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -144,6 +144,7 @@ fun StatisticScreen(navController: NavHostController) {
                 animation = simpleChartAnimation(),
                 sliceDrawer = SimpleSliceDrawer(sliceThickness)
             )
+
             // Item List
             Spacer(modifier = Modifier.height(20.dp))
             Column(

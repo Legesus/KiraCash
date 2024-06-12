@@ -8,5 +8,6 @@ data class PaidItem(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val price: Double,
-    val isPaid: Boolean
+    val isPaid: Boolean,
+    val walletId: Int
 )
