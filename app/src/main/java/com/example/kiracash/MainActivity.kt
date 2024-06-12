@@ -28,6 +28,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.Item
+import com.example.kiracash.model.PaidItem
 import com.example.kiracash.model.Receipt
 import com.example.kiracash.model.ReceiptItemJoin
 import com.example.kiracash.model.Wallet
@@ -35,6 +36,7 @@ import com.example.kiracash.model.WalletItemJoin
 import com.example.kiracash.ui.theme.KiraCashTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -55,6 +57,7 @@ class MainActivity : ComponentActivity() {
             val walletDao = db.walletDao()
             val receiptItemJoinDao = db.receiptItemJoinDao()
             val walletItemJoinDao = db.walletItemJoinDao()
+            val paidItemDao = db.paidItemDao()  // New DAO for PaidItem
 
             // Delete all data in the database
             db.clearAllTables()
@@ -73,13 +76,26 @@ class MainActivity : ComponentActivity() {
                 Item(name = "AIR SEJUK", price = 0.30)
             )
 
+            // Create PaidItem objects with isPaid=true
+            val paidItems = items.map {
+                PaidItem(name = it.name, price = it.price, isPaid = true)
+            }
+
             // Insert items into the database
             itemDao.insertAll(items)
             Log.d(tag, "Inserted items: $items")
 
+            // Insert paid items into the database
+            paidItemDao.insertAll(paidItems)
+            Log.d(tag, "Inserted paid items: $paidItems")
+
             // Retrieve the inserted items to get their IDs
             val insertedItems = itemDao.getAll()
             Log.d(tag, "Retrieved items: $insertedItems")
+
+            // Retrieve the inserted paid items to get their IDs
+            val insertedPaidItems = paidItemDao.getAllPaidItems().first()
+            Log.d(tag, "Retrieved paid items: $insertedPaidItems")
 
             // Create a single Receipt object
             val receipt = Receipt()
@@ -101,45 +117,43 @@ class MainActivity : ComponentActivity() {
             Log.d(tag, "Inserted wallets: $wallets")
 
             // Retrieve the inserted wallets to get their IDs
-            val insertedWallets = walletDao.getAllWallets()
-            insertedWallets.collect { walletsList ->
-                Log.d(tag, "Retrieved wallets: $walletsList")
+            val insertedWallets = walletDao.getAllWallets().first()
+            Log.d(tag, "Retrieved wallets: $insertedWallets")
 
-                // Create ReceiptItemJoin objects to link each item to the receipt
-                val receiptItemJoins = insertedItems.map { item ->
-                    ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
-                }
-                Log.d(tag, "ReceiptItemJoins: $receiptItemJoins")
+            // Create ReceiptItemJoin objects to link each item to the receipt
+            val receiptItemJoins = insertedItems.map { item ->
+                ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
+            }
+            Log.d(tag, "ReceiptItemJoins: $receiptItemJoins")
 
-                // Insert joins into the database
-                receiptItemJoins.forEach { receiptItemJoinDao.insert(it) }
-                Log.d(tag, "Inserted receiptItemJoins: $receiptItemJoins")
+            // Insert joins into the database
+            receiptItemJoins.forEach { receiptItemJoinDao.insert(it) }
+            Log.d(tag, "Inserted receiptItemJoins: $receiptItemJoins")
 
-                // Create WalletItemJoin objects to link each item to its corresponding wallet
-                val johnDoeItems = listOf(insertedItems[0], insertedItems[5], insertedItems[7])
-                val janeDoeItems = listOf(insertedItems[1], insertedItems[3], insertedItems[9])
-                val johnSmithItems = listOf(insertedItems[2], insertedItems[4], insertedItems[6], insertedItems[8])
+            // Create WalletItemJoin objects to link each item to its corresponding wallet
+            val johnDoeItems = listOf(insertedItems[0], insertedItems[5], insertedItems[7])
+            val janeDoeItems = listOf(insertedItems[1], insertedItems[3], insertedItems[9])
+            val johnSmithItems = listOf(insertedItems[2], insertedItems[4], insertedItems[6], insertedItems[8])
 
-                val walletItemJoins = mutableListOf<WalletItemJoin>()
+            val walletItemJoins = mutableListOf<WalletItemJoin>()
 
-                johnDoeItems.forEach { item ->
-                    walletItemJoins.add(WalletItemJoin(walletId = walletsList[0].id, itemId = item.id))
-                }
-                janeDoeItems.forEach { item ->
-                    walletItemJoins.add(WalletItemJoin(walletId = walletsList[1].id, itemId = item.id))
-                }
-                johnSmithItems.forEach { item ->
-                    walletItemJoins.add(WalletItemJoin(walletId = walletsList[2].id, itemId = item.id))
-                }
+            johnDoeItems.forEach { item ->
+                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[0].id, itemId = item.id))
+            }
+            janeDoeItems.forEach { item ->
+                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[1].id, itemId = item.id))
+            }
+            johnSmithItems.forEach { item ->
+                walletItemJoins.add(WalletItemJoin(walletId = insertedWallets[2].id, itemId = item.id))
+            }
 
-                // Insert joins into the database
-                walletItemJoins.forEach { walletItemJoinDao.insert(it) }
-                Log.d(tag, "WalletItemJoins: $walletItemJoins")
+            // Insert joins into the database
+            walletItemJoins.forEach { walletItemJoinDao.insert(it) }
+            Log.d(tag, "WalletItemJoins: $walletItemJoins")
 
-                // Update each wallet with method in WalletDao
-                walletDao.getWalletsWithTotalAmountPaid().collect { updatedWallets ->
-                    Log.d(tag, "Wallets with total amount paid: $updatedWallets")
-                }
+            // Update each wallet with method in WalletDao
+            walletDao.getWalletsWithTotalAmountPaid().collect { updatedWallets ->
+                Log.d(tag, "Wallets with total amount paid: $updatedWallets")
             }
         }
     }

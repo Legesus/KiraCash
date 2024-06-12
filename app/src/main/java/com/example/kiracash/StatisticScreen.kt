@@ -63,18 +63,18 @@ fun StatisticScreen(navController: NavHostController) {
     var showAmountOwe by remember { mutableStateOf(false) }
 
     LaunchedEffect(showAmountOwe) {
-        if (showAmountOwe) {
-            walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
-                wallets = walletList
-                totalAmount = walletList.sumOf { it.amountOwe }
-            }
-        } else {
-            walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
-                wallets = walletList
-                totalAmount = walletList.sumOf { it.amountPaid }
-            }
+    if (showAmountOwe) {
+        walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
+            wallets = walletList
+            totalAmount = walletList.sumOf { it.amountOwe }
+        }
+    } else {
+        walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
+            wallets = walletList
+            totalAmount = walletList.sumOf { it.amountPaid }
         }
     }
+}
 
     val slices = wallets.map { wallet ->
         PieChartData.Slice(
