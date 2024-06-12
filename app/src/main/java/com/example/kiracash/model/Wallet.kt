@@ -8,5 +8,7 @@ data class Wallet(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val owner: String,
     val amountPaid: Double,
-    val amountOwe: Double
+    val amountOwe: Double,
+    val walletPicture: String,
+    val walletColor: Int
 )

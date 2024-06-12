@@ -20,7 +20,7 @@ interface WalletDao {
     suspend fun insert(wallet: Wallet)
 
     @Query("""
-    SELECT wallets.id, wallets.owner, IFNULL(SUM(paid_items.price), 0) as amountPaid, wallets.amountOwe
+    SELECT wallets.id, wallets.owner, IFNULL(SUM(paid_items.price), 0) as amountPaid, wallets.amountOwe, wallets.walletPicture, wallets.walletColor
     FROM wallets
     LEFT JOIN wallet_item_join ON wallets.id = wallet_item_join.walletId
     LEFT JOIN paid_items ON wallet_item_join.itemId = paid_items.id AND paid_items.isPaid = 1
@@ -29,7 +29,7 @@ interface WalletDao {
     fun getWalletsWithTotalAmountPaid(): Flow<List<Wallet>>
 
     @Query("""
-    SELECT wallets.id, wallets.owner, wallets.amountPaid, IFNULL(SUM(paid_items.price), 0) as amountOwe
+    SELECT wallets.id, wallets.owner, wallets.amountPaid, IFNULL(SUM(paid_items.price), 0) as amountOwe, wallets.walletPicture, wallets.walletColor
     FROM wallets
     LEFT JOIN wallet_item_join ON wallets.id = wallet_item_join.walletId
     LEFT JOIN paid_items ON wallet_item_join.itemId = paid_items.id AND paid_items.isPaid = 0

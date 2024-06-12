@@ -23,4 +23,6 @@ interface ReceiptDao {
     // Add this new method
     @Query("SELECT * FROM receipts")
     fun getAllReceipts(): Flow<List<Receipt>>
+
+
 }

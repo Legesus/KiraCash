@@ -76,9 +76,12 @@ class MainActivity : ComponentActivity() {
                 Item(name = "AIR SEJUK", price = 0.30)
             )
 
-            // Create PaidItem objects with isPaid=true
-            val paidItems = items.map {
-                PaidItem(name = it.name, price = it.price, isPaid = true)
+            // Create PaidItem objects with half isPaid=true and half isPaid=false
+            val paidItems = items.mapIndexed { index, item ->
+                val isPaid = index < items.size / 2
+                val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid)
+                Log.d(tag, "PaidItem: $paidItem, isPaid: $isPaid")
+                paidItem
             }
 
             // Insert items into the database
@@ -106,10 +109,10 @@ class MainActivity : ComponentActivity() {
 
             // Create Wallet objects
             val wallets = listOf(
-                Wallet(owner = "John Doe", amountPaid = 0.0, amountOwe = 0.0),
-                Wallet(owner = "Jane Doe", amountPaid = 0.0, amountOwe = 0.0),
-                Wallet(owner = "John Smith", amountPaid = 0.0, amountOwe = 0.0),
-                Wallet(owner = "Myself", amountPaid = 0.0, amountOwe = 0.0)
+                Wallet(owner = "John Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFF0000),
+                Wallet(owner = "Jane Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x00FF00),
+                Wallet(owner = "John Smith", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x0000FF),
+                Wallet(owner = "Myself", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFFFF00),
             )
 
             // Insert wallets into the database

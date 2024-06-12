@@ -14,6 +14,7 @@ interface PaidItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(paidItems: List<PaidItem>)
 
+
     @Query("SELECT * FROM paid_items")
     fun getAllPaidItems(): Flow<List<PaidItem>>
 

@@ -15,9 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,7 +27,7 @@ import coil.compose.rememberImagePainter
 import com.example.kiracash.model.AppDatabase
 
 data class Person(
-    val profilePicture: String, // URL or resource ID
+    val walletPicture: String, // URL or resource ID
     val name: String,
     val cashIn: Double,
     val cashOut: Double
@@ -47,6 +44,8 @@ fun PersonList(people: List<Person>, modifier: Modifier = Modifier) {
 
 @Composable
 fun PersonRow(person: Person) {
+    val context = LocalContext.current
+    val walletPictureResId = context.resources.getIdentifier(person.walletPicture, "drawable", context.packageName)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -59,18 +58,14 @@ fun PersonRow(person: Person) {
             modifier = Modifier.padding(15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (person.profilePicture == "person_icon") {
-                Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(50.dp))
-            } else {
-                Image(
-                    painter = rememberImagePainter(data = person.profilePicture),
-                    contentDescription = null,
-                    modifier = Modifier.size(50.dp)
-                )
-            }
+            Image(
+                painter = rememberImagePainter(data = walletPictureResId),
+                contentDescription = null,
+                modifier = Modifier.size(50.dp)
+            )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = "${person.name}")
+                Text(text = person.name)
                 Text(text = "Paid: ${person.cashIn}")
                 Text(text = "Owe: ${person.cashOut}")
             }
@@ -85,16 +80,21 @@ fun PreviewPersonSectionContent() {
     val db = AppDatabase.getDatabase(context)
     val walletDao = db.walletDao()
 
-    // Collect wallets as a state
-    val walletsFlow = walletDao.getAllWallets().collectAsState(initial = emptyList())
+    // Collect wallets with total amount paid as a state
+    val walletsPaidFlow = walletDao.getWalletsWithTotalAmountPaid().collectAsState(initial = emptyList())
+    Log.d("PersonSection", "PreviewPersonSectionContent Paid: ${walletsPaidFlow.value}")
+
+    // Collect wallets with total amount owe as a state
+    val walletsOweFlow = walletDao.getWalletsWithTotalAmountOwe().collectAsState(initial = emptyList())
+    Log.d("PersonSection", "PreviewPersonSectionContent Owe: ${walletsOweFlow.value}")
 
     // Map wallets to Person data class
-    val people = walletsFlow.value.map { wallet ->
+    val people = walletsPaidFlow.value.zip(walletsOweFlow.value) { walletPaid, walletOwe ->
         Person(
-            profilePicture = "person_icon", // Using person icon from extended icons library
-            name = wallet.owner,
-            cashIn = wallet.amountPaid,
-            cashOut = wallet.amountOwe
+            walletPicture = walletPaid.walletPicture, // Using person icon from extended icons library
+            name = walletPaid.owner,
+            cashIn = walletPaid.amountPaid,
+            cashOut = walletOwe.amountOwe
         )
     }
 
@@ -110,17 +110,19 @@ class PersonSection {
         val db = AppDatabase.getDatabase(context)
         val walletDao = db.walletDao()
 
-        // Collect wallets as a state
-        val walletsFlow = walletDao.getWalletsWithTotalAmountPaid().collectAsState(initial = emptyList())
-        Log.d("PersonSection", "PersonSection Wallets: ${walletsFlow.value}")
+        // Collect wallets with total amount paid as a state
+        val walletsPaidFlow = walletDao.getWalletsWithTotalAmountPaid().collectAsState(initial = emptyList())
+
+        // Collect wallets with total amount owe as a state
+        val walletsOweFlow = walletDao.getWalletsWithTotalAmountOwe().collectAsState(initial = emptyList())
 
         // Map wallets to Person data class
-        val people = walletsFlow.value.map { wallet ->
+        val people = walletsPaidFlow.value.zip(walletsOweFlow.value) { walletPaid, walletOwe ->
             Person(
-                profilePicture = "person_icon", // Using person icon from extended icons library
-                name = wallet.owner,
-                cashIn = wallet.amountPaid,
-                cashOut = wallet.amountOwe
+                walletPicture = walletPaid.walletPicture, // Use walletPicture from the database
+                name = walletPaid.owner,
+                cashIn = walletPaid.amountPaid,
+                cashOut = walletOwe.amountOwe
             )
         }
 
