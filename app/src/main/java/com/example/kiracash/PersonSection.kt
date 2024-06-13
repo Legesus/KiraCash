@@ -67,8 +67,14 @@ fun PersonRow(person: Person) {
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(text = person.name, color = Color.White)
-                Text(text = "Paid: RM ${person.cashIn}", color = Color.White)
-                Text(text = "Owe: RM ${person.cashOut}", color = Color.White)
+                Row {
+                    Text(text = "They owe you: ", color = Color.White)
+                    Text(text = "RM ${person.cashIn}", color = if (person.cashIn > 0) Color(0xFF008000) else Color.White) // Green color for cashIn if it's greater than 0
+                }
+                Row {
+                    Text(text = "You owe them: ", color = Color.White)
+                    Text(text = "RM ${person.cashOut}", color = if (person.cashOut > 0) Color.Red else Color.White) // Red color for cashOut if it's greater than 0
+                }
             }
         }
     }

@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CardItem(title: String, cash: Float, isDebtPositive: Boolean = false) {
     val textColor = when (title) {
-        "Expenses" -> Color.Red
-        "Income" -> Color(0xFF008000)
-        "Debt" -> if (isDebtPositive) Color(0xFF008000) else Color.Red
+        "Owe" -> Color.Red
+        "Are Owed" -> Color(0xFF008000)
+        "Total Budget" -> if (isDebtPositive) Color(0xFF008000) else Color.Red
         else -> MaterialTheme.colorScheme.onBackground
     }
 
@@ -78,7 +78,8 @@ fun CardItem(title: String, cash: Float, isDebtPositive: Boolean = false) {
 fun CardSection() {
     // Add your content here
     Column {
-        CardItem("Expenses", 24.0f)
-        CardItem("Income", 25.0f)
+        CardItem("Total Budget", 30.0f)
+        CardItem("Are Owed", 24.0f)
+        CardItem("Owe", 25.0f)
     }
 }

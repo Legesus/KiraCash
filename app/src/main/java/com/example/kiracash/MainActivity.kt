@@ -177,7 +177,14 @@ fun HomeScreen(navController: NavHostController) {
             ) {
 
                 CardSection()
-                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    modifier = Modifier.padding(8.dp),
+                    text = "People",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
                 PersonSection().PersonSectionContent()
 
