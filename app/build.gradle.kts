@@ -90,7 +90,7 @@ dependencies {
     // Extended Icons
     implementation(libs.material.icons.extended)
 
-    implementation("io.coil-kt:coil-compose:1.4.0")
+    implementation("io.coil-kt:coil-compose:2.0.0")
     
     // Machine Learning OCR
 

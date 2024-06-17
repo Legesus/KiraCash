@@ -3,6 +3,7 @@
 package com.example.kiracash
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -49,7 +50,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.PaidItem
-import kotlinx.coroutines.Dispatchers
+import com.example.kiracash.model.Wallet
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -65,6 +66,29 @@ class DebtMenuActivity : ComponentActivity() {
 
 @Composable
 fun DebtMenuScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val walletDao = db.walletDao()
+    val coroutineScope = rememberCoroutineScope()
+
+    var wallets by remember { mutableStateOf(emptyList<Wallet>()) }
+    var selectedWallet by remember { mutableStateOf<Wallet?>(null) }
+    var showAmountOwe by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        selectedWallet = wallets.firstOrNull()
+        coroutineScope.launch {
+            walletDao.getAllWallets().collect { walletList ->
+                Log.d("DebtMenuScreen", "Loaded wallets: $walletList")
+                wallets = walletList
+                if (walletList.isNotEmpty()) {
+                    selectedWallet = walletList[0]
+                    Log.d("DebtMenuScreen", "Selected wallet: $selectedWallet")
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -92,39 +116,42 @@ fun DebtMenuScreen(navController: NavHostController) {
                 .background(Color(0xFF1C1B22))
                 .padding(16.dp)
         ) {
-            WalletDropdown()
+            selectedWallet?.let { wallet ->
+                WalletOverview(walletDao.getWalletById(wallet.id), coroutineScope)
+            }
+            WalletDropdown(
+                wallets = wallets,
+                selectedWallet = selectedWallet,
+                onWalletSelected = { selectedWallet = it },
+                showAmountOwe = showAmountOwe,
+                onShowAmountOweChange = { showAmountOwe = it },
+                context = context // Pass context down to WalletDropdown
+            )
         }
     }
 }
 
+
 @Composable
-fun WalletDropdown() {
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val walletDao = db.walletDao()
-    val paidItemDao = db.paidItemDao()
+fun WalletDropdown(
+    wallets: List<Wallet>,
+    selectedWallet: Wallet?,
+    onWalletSelected: (Wallet) -> Unit,
+    showAmountOwe: Boolean,
+    onShowAmountOweChange: (Boolean) -> Unit,
+    context: android.content.Context // Receive context
+) {
     val coroutineScope = rememberCoroutineScope()
-
-    // State to hold list of wallets and the selected wallet
-    var wallets by remember { mutableStateOf(emptyList<String>()) }
-    var selectedWallet by remember { mutableStateOf("") }
-    var walletId by remember { mutableStateOf(0) }
-
-    // State to hold items linked to the selected wallet
+    val paidItemDao = AppDatabase.getDatabase(context).paidItemDao()
+    var expanded by remember { mutableStateOf(false) }
     var items by remember { mutableStateOf(emptyList<PaidItem>()) }
 
-    // State to toggle between amountPaid and amountOwe
-    var showAmountOwe by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        walletDao.getAllWallets().collect { walletList ->
-            wallets = walletList.map { it.owner }
-            if (wallets.isNotEmpty()) {
-                selectedWallet = wallets[0]
-                coroutineScope.launch(Dispatchers.IO) {
-                    walletId = walletDao.getWalletIdByOwner(selectedWallet).first()
-                    items = paidItemDao.getAllPaidItems().first().filter { it.walletId == walletId }
-                }
+    LaunchedEffect(selectedWallet) {
+        selectedWallet?.let {
+            coroutineScope.launch {
+                Log.d("WalletDropdown", "Loading items for wallet: ${selectedWallet.id}")
+                items = paidItemDao.getAllPaidItems().first().filter { it.walletId == selectedWallet.id }
+                Log.d("WalletDropdown", "Loaded items: $items")
             }
         }
     }
@@ -150,7 +177,7 @@ fun WalletDropdown() {
                 Text("Paid", color = Color.White)
                 Switch(
                     checked = showAmountOwe,
-                    onCheckedChange = { showAmountOwe = it },
+                    onCheckedChange = onShowAmountOweChange,
                     colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
                 )
                 Text("Owe", color = Color.White)
@@ -159,8 +186,6 @@ fun WalletDropdown() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        var expanded by remember { mutableStateOf(false) }
-
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
@@ -168,7 +193,7 @@ fun WalletDropdown() {
         ) {
             TextField(
                 readOnly = true,
-                value = selectedWallet,
+                value = selectedWallet?.owner ?: "",
                 onValueChange = {},
                 label = { Text("Wallet") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -183,14 +208,11 @@ fun WalletDropdown() {
             ) {
                 wallets.forEach { wallet ->
                     DropdownMenuItem(
-                        text = { Text(wallet) },
+                        text = { Text(wallet.owner) },
                         onClick = {
-                            selectedWallet = wallet
+                            Log.d("WalletDropdown", "Wallet selected: $wallet")
+                            onWalletSelected(wallet)
                             expanded = false
-                            coroutineScope.launch(Dispatchers.IO) {
-                                walletId = walletDao.getWalletIdByOwner(selectedWallet).first()
-                                items = paidItemDao.getAllPaidItems().first().filter { it.walletId == walletId }
-                            }
                         }
                     )
                 }
@@ -221,7 +243,11 @@ fun ItemsList(items: List<PaidItem>, showAmountOwe: Boolean) {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f)
                 )
-                Checkbox(checked = true, onCheckedChange = {}, colors = CheckboxDefaults.colors(checkedColor = Color(0xFF509BFF)))
+                Checkbox(
+                    checked = !showAmountOwe,
+                    onCheckedChange = {},
+                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF509BFF))
+                )
             }
         }
     }

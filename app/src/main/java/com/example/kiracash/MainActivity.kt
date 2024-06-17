@@ -133,6 +133,10 @@ class MainActivity : ComponentActivity() {
             walletDao.getWalletsWithTotalAmountPaid().collect { updatedWallets ->
                 Log.d(tag, "Wallets with total amount paid: $updatedWallets")
             }
+
+            walletDao.getWalletsWithTotalAmountOwe().collect { updatedWallets ->
+                Log.d(tag, "Wallets with total amount owe: $updatedWallets")
+            }
         }
     }
 }
