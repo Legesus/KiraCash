@@ -1,5 +1,6 @@
 package com.example.kiracash
 
+import EditWalletUI
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,6 +12,7 @@ object MainDestinations {
     const val STATISTIC_SCREEN_ROUTE = "statisticScreen"
     const val ACCOUNT_ROUTE = "account"
     const val QR_MENU_ROUTE = "qrMenu"
+    const val EDIT_WALLET_ROUTE = "editWallet"
 }
 
 @Composable
@@ -34,6 +36,9 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
         }
         composable(MainDestinations.QR_MENU_ROUTE) {
             OCRScreen(navController = navController)
+        }
+        composable(MainDestinations.EDIT_WALLET_ROUTE) {
+            EditWalletUI(navController = navController)
         }
     }
 

@@ -127,7 +127,7 @@ fun ProfileScreen(navController: NavHostController) {
 
             val options = listOf(
                 Option(text = "Configure Gemini API", action = { /*TODO*/ }),
-                Option(text = "Edit Wallet", action = { /*TODO*/ }),
+                Option(text = "Edit Wallet", action = { navController.navigate(MainDestinations.EDIT_WALLET_ROUTE) }),
                 Option(text = "Customize Theme", action = { /*TODO*/ }),
                 Option(text = "Export", action = { /*TODO*/ }),
                 Option(text = "Others", action = { /*TODO*/ })
