@@ -1,5 +1,9 @@
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -7,12 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -21,15 +19,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.Wallet
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.painter.Painter
 import coil.compose.rememberImagePainter
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import com.vanpra.composematerialdialogs.color.colorChooser
 import com.vanpra.composematerialdialogs.color.ColorPalette
 import com.vanpra.composematerialdialogs.color.ARGBPickerState
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +40,7 @@ fun EditWalletUI(navController: NavController) {
     val walletName = remember { mutableStateOf("") }
     val walletPicture = remember { mutableStateOf("") }
     val walletColor = remember { mutableStateOf(Color.White) }
+    val tempWalletColor = remember { mutableStateOf(Color.White) } // Temporary color state
 
     // Color picker dialog state
     val colorPickerDialogState = rememberMaterialDialogState()
@@ -123,10 +119,11 @@ fun EditWalletUI(navController: NavController) {
                                 amountPaid = 0.0,
                                 amountOwe = 0.0,
                                 walletPicture = walletPicture.value,
-                                walletColor = walletColor.value.toArgb()
+                                walletColor = tempWalletColor.value.toArgb() // Use temporary color
                             )
                         )
                     }
+                    walletColor.value = tempWalletColor.value // Set the selected color
                     showDialog.value = false
                 }) {
                     Text("Done")
@@ -135,12 +132,18 @@ fun EditWalletUI(navController: NavController) {
         )
     }
 
-    MaterialDialog(dialogState = colorPickerDialogState) {
+    MaterialDialog(
+        dialogState = colorPickerDialogState,
+        buttons = {
+            positiveButton("Ok")
+            negativeButton("Cancel")
+            }
+        ) {
         colorChooser(
             colors = ColorPalette.Primary,
             argbPickerState = ARGBPickerState.WithAlphaSelector,
             onColorSelected = { color ->
-                walletColor.value = color
+                tempWalletColor.value = color // Save the color temporarily
             }
         )
     }
@@ -163,7 +166,7 @@ fun WalletCard(wallet: Wallet, onUploadClick: (String) -> Unit, onDeleteClick: (
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Load and display wallet picture
-            val painter: Painter = rememberImagePainter(data = walletPictureResId)
+            val painter = rememberImagePainter(data = walletPictureResId)
             Image(
                 painter = painter,
                 contentDescription = "Wallet Picture",
@@ -214,5 +217,3 @@ fun PreviewEditWalletUI() {
     val navController = rememberNavController()
     EditWalletUI(navController)
 }
-
-
