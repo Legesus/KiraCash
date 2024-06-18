@@ -24,6 +24,12 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.painter.Painter
 import coil.compose.rememberImagePainter
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import com.vanpra.composematerialdialogs.color.colorChooser
+import com.vanpra.composematerialdialogs.color.ColorPalette
+import com.vanpra.composematerialdialogs.color.ARGBPickerState
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +39,15 @@ fun EditWalletUI(navController: NavController) {
     val walletDao = db.walletDao()
     val wallets = walletDao.getAllWallets().collectAsState(initial = emptyList())
     val coroutineScope = rememberCoroutineScope()
+
+    // State for dialog visibility, wallet name, wallet picture, and wallet color
+    val showDialog = remember { mutableStateOf(false) }
+    val walletName = remember { mutableStateOf("") }
+    val walletPicture = remember { mutableStateOf("") }
+    val walletColor = remember { mutableStateOf(Color.White) }
+
+    // Color picker dialog state
+    val colorPickerDialogState = rememberMaterialDialogState()
 
     Scaffold(
         topBar = {
@@ -68,22 +83,67 @@ fun EditWalletUI(navController: NavController) {
                 }
                 item {
                     AddWalletButton {
-                        coroutineScope.launch {
-                            walletDao.insert(
-                                Wallet(
-                                    owner = "New Wallet",
-                                    amountPaid = 0.0,
-                                    amountOwe = 0.0,
-                                    walletPicture = "",
-                                    walletColor = Color.Gray.toArgb()
-                                )
-                            )
-                        }
+                        showDialog.value = true
                     }
                 }
             }
         }
     )
+
+    if (showDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDialog.value = false },
+            title = { Text("Add Wallet") },
+            text = {
+                Column {
+                    TextField(
+                        value = walletName.value,
+                        onValueChange = { walletName.value = it },
+                        label = { Text("Wallet Name") }
+                    )
+                    Button(onClick = {
+                        // Handle picture upload
+                        walletPicture.value = "new_picture_path" // Replace with actual picture path
+                    }) {
+                        Text("Upload Picture")
+                    }
+                    Button(onClick = {
+                        colorPickerDialogState.show()
+                    }) {
+                        Text("Pick Color")
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    coroutineScope.launch {
+                        walletDao.insert(
+                            Wallet(
+                                owner = walletName.value,
+                                amountPaid = 0.0,
+                                amountOwe = 0.0,
+                                walletPicture = walletPicture.value,
+                                walletColor = walletColor.value.toArgb()
+                            )
+                        )
+                    }
+                    showDialog.value = false
+                }) {
+                    Text("Done")
+                }
+            }
+        )
+    }
+
+    MaterialDialog(dialogState = colorPickerDialogState) {
+        colorChooser(
+            colors = ColorPalette.Primary,
+            argbPickerState = ARGBPickerState.WithAlphaSelector,
+            onColorSelected = { color ->
+                walletColor.value = color
+            }
+        )
+    }
 }
 
 @Composable
@@ -118,16 +178,17 @@ fun WalletCard(wallet: Wallet, onUploadClick: (String) -> Unit, onDeleteClick: (
                     val newPicture = "new_picture_path" // Replace with actual picture path
                     onUploadClick(newPicture)
                 }) {
-                    Text("Upload walletPicture")
+                    Text("Upload Picture")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(onClick = onDeleteClick) {
-                    Text("Delete wallet")
+                    Text("Delete Wallet")
                 }
             }
         }
     }
 }
+
 @Composable
 fun AddWalletButton(onClick: () -> Unit) {
     Button(
@@ -153,3 +214,5 @@ fun PreviewEditWalletUI() {
     val navController = rememberNavController()
     EditWalletUI(navController)
 }
+
+

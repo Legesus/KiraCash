@@ -115,4 +115,8 @@ dependencies {
     // Tehras Chart
     implementation("com.github.tehras:charts:0.2.4-alpha")
 
+    // Compose Material Dialogs
+    implementation("io.github.vanpra.compose-material-dialogs:color:0.9.0")
+    implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
+
 }
