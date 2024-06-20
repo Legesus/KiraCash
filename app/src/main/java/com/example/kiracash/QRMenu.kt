@@ -82,9 +82,14 @@ class OCRActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, onDismiss: () -> Unit, onFinalize: (Map<Item, Pair<Wallet, Boolean>>) -> Unit) {
-    // Create a mutable state for each item to hold the selected wallet and isPaid status
-    val selectedWalletsAndPaidStatus = remember { mutableStateMapOf<Item, Pair<Wallet, Boolean>>() }
+fun ReceiptDialog(
+    receipt: Receipt,
+    items: List<Item>,
+    wallets: List<Wallet>,
+    onDismiss: () -> Unit,
+    onFinalize: (Map<Item, Pair<Wallet?, Boolean>>) -> Unit
+) {
+    val selectedWalletsAndPaidStatus = remember { mutableStateMapOf<Item, Pair<Wallet?, Boolean>>() }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -120,7 +125,7 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                         )
 
                         var expanded by remember { mutableStateOf(false) }
-                        var selectedWallet by remember { mutableStateOf(if (wallets.isNotEmpty()) wallets[0] else null) }
+                        var selectedWallet by remember { mutableStateOf<Wallet?>(if (wallets.isNotEmpty()) wallets[0] else null) }
                         var isPaid by remember { mutableStateOf(false) }
 
                         ExposedDropdownMenuBox(
@@ -133,7 +138,7 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                                     .menuAnchor()
                                     .fillMaxWidth(),
                                 readOnly = true,
-                                value = selectedWallet?.owner ?: "",
+                                value = selectedWallet?.owner ?: "None",
                                 onValueChange = {},
                                 label = { Text("Select Wallet") },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -143,6 +148,15 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false },
                             ) {
+                                DropdownMenuItem(
+                                    text = { Text("None") },
+                                    onClick = {
+                                        selectedWallet = null
+                                        expanded = false
+
+                                        selectedWalletsAndPaidStatus[item] = Pair(null, isPaid)
+                                    },
+                                )
                                 wallets.forEach { wallet ->
                                     DropdownMenuItem(
                                         text = { Text(wallet.owner) },
@@ -150,7 +164,6 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                                             selectedWallet = wallet
                                             expanded = false
 
-                                            // Update the selected wallet and isPaid status for this item
                                             selectedWalletsAndPaidStatus[item] = Pair(wallet, isPaid)
                                         },
                                     )
@@ -162,8 +175,7 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                             checked = isPaid,
                             onCheckedChange = { isChecked ->
                                 isPaid = isChecked
-                                // Update the isPaid status for this item
-                                selectedWallet?.let { selectedWalletsAndPaidStatus[item] = Pair(it, isChecked) }
+                                selectedWalletsAndPaidStatus[item] = Pair(selectedWallet, isChecked)
                             }
                         )
                     }
@@ -175,7 +187,7 @@ fun ReceiptDialog(receipt: Receipt, items: List<Item>, wallets: List<Wallet>, on
                     onClick = {
                         Log.d("ReceiptDialog", "Size of selectedWalletsAndPaidStatus: ${selectedWalletsAndPaidStatus.size}")
                         onFinalize(selectedWalletsAndPaidStatus)
-                        onDismiss()  // Dismiss the dialog after finalizing
+                        onDismiss()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -290,7 +302,6 @@ fun ReceiptHistory(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OCRScreen(navController: NavHostController) {
@@ -303,17 +314,12 @@ fun OCRScreen(navController: NavHostController) {
     val selectedReceipt = remember { mutableStateOf<Receipt?>(null) }
     val receiptItems = remember { mutableStateOf<List<Item>>(emptyList()) }
 
-    // Create an instance of WalletDao
     val walletDao = AppDatabase.getDatabase(context).walletDao()
     val receiptDao = AppDatabase.getDatabase(context).receiptDao()
 
-    // Create a mutable state to hold the list of wallets
     var walletsState by remember { mutableStateOf<List<Wallet>>(emptyList()) }
-
-    // Create a coroutine scope
     val scope = rememberCoroutineScope()
 
-    // Observe the wallets from the database
     LaunchedEffect(Unit) {
         scope.launch {
             walletDao.getAllWallets().collect { wallets ->
@@ -327,11 +333,11 @@ fun OCRScreen(navController: NavHostController) {
         onResult = { imageBitmap ->
             if (imageBitmap != null) {
                 scope.launch(Dispatchers.IO) {
-                    showLoading.value = true  // Show loading dialog
+                    showLoading.value = true
                     val processedItems = imageProcessor.processImage(imageBitmap)
                     jsonString.value = imageProcessor.getJsonString()
                     showDialog.value = true
-                    showLoading.value = false  // Hide loading dialog
+                    showLoading.value = false
                 }
             }
         }
@@ -343,11 +349,11 @@ fun OCRScreen(navController: NavHostController) {
             if (uri != null) {
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 scope.launch(Dispatchers.IO) {
-                    showLoading.value = true  // Show loading dialog
+                    showLoading.value = true
                     val processedItems = imageProcessor.processImage(bitmap)
                     jsonString.value = imageProcessor.getJsonString()
                     showDialog.value = true
-                    showLoading.value = false  // Hide loading dialog
+                    showLoading.value = false
                 }
             }
         }
@@ -398,8 +404,6 @@ fun OCRScreen(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-
-                // Include the receipt history below the TopAppBar
                 ReceiptHistory(
                     onReceiptClick = { receipt ->
                         scope.launch(Dispatchers.IO) {
@@ -412,7 +416,7 @@ fun OCRScreen(navController: NavHostController) {
                 )
 
                 if (showLoading.value) {
-                    LoadingDialog()  // Display the loading dialog
+                    LoadingDialog()
                 }
 
                 if (showDialog.value) {
@@ -420,7 +424,7 @@ fun OCRScreen(navController: NavHostController) {
                     val wallets = walletsState
 
                     ReceiptDialog(
-                        receipt = Receipt(),  // Replace with the actual Receipt
+                        receipt = Receipt(),
                         items = items,
                         wallets = wallets,
                         onDismiss = {
@@ -433,20 +437,21 @@ fun OCRScreen(navController: NavHostController) {
                                 val receiptItemJoinDao = AppDatabase.getDatabase(context).receiptItemJoinDao()
                                 val paidItemDao = AppDatabase.getDatabase(context).paidItemDao()
 
-                                val receipt = Receipt() // Replace with the actual code to create a Receipt
-                                val receiptDao = AppDatabase.getDatabase(context).receiptDao()
+                                val receipt = Receipt()
                                 val receiptId = receiptDao.insert(receipt)
 
                                 selectedWalletsAndPaidStatus.forEach { (item, pair) ->
                                     val (wallet, isPaid) = pair
 
-                                    val walletJoin = WalletItemJoin(walletId = wallet.id, itemId = item.id)
-                                    walletItemJoinDao.insert(walletJoin)
+                                    wallet?.let {
+                                        val walletJoin = WalletItemJoin(walletId = it.id, itemId = item.id)
+                                        walletItemJoinDao.insert(walletJoin)
+                                    }
 
                                     val receiptJoin = ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
                                     receiptItemJoinDao.insert(receiptJoin)
 
-                                    val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = wallet.id)
+                                    val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = wallet?.id ?: 0)
                                     paidItemDao.insert(paidItem)
                                 }
                             }
@@ -510,7 +515,7 @@ fun LoadingDialog() {
     Dialog(onDismissRequest = {}) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color.Black.copy(alpha = 0.1f) // Semi-transparent background
+            color = Color.Black.copy(alpha = 0.1f)
         ) {
             Box(
                 contentAlignment = Alignment.Center,
