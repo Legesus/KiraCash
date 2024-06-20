@@ -1,5 +1,7 @@
 package com.example.kiracash
 
+import android.content.Context
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -21,11 +23,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
 import com.example.kiracash.model.AppDatabase
+import java.io.File
 
 data class Person(
     val walletPicture: String, // URL or resource ID
@@ -46,7 +52,8 @@ fun PersonList(people: List<Person>, modifier: Modifier = Modifier) {
 @Composable
 fun PersonRow(person: Person) {
     val context = LocalContext.current
-    val walletPictureResId = context.resources.getIdentifier(person.walletPicture, "drawable", context.packageName)
+    val bitmap = loadBitmapFromFile(person.walletPicture)
+    val resourceId = getDrawableResourceId(context, person.walletPicture)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -59,11 +66,27 @@ fun PersonRow(person: Person) {
             modifier = Modifier.padding(15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = rememberImagePainter(data = walletPictureResId),
-                contentDescription = null,
-                modifier = Modifier.size(50.dp)
-            )
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = null,
+                    modifier = Modifier.size(50.dp)
+                )
+            } else if (resourceId != null) {
+                Image(
+                    painter = painterResource(id = resourceId),
+                    contentDescription = null,
+                    modifier = Modifier.size(50.dp)
+                )
+            } else {
+                Image(
+                    painter = rememberImagePainter(data = person.walletPicture, builder = {
+                        error(R.drawable.proficon) // Fallback image
+                    }),
+                    contentDescription = null,
+                    modifier = Modifier.size(50.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(text = person.name, color = Color.White)
@@ -140,5 +163,29 @@ class PersonSection {
 
         // Display the list of people
         PersonList(people, Modifier.padding(16.dp))
+    }
+}
+
+fun loadBitmapFromFile(filePath: String): ImageBitmap? {
+    return try {
+        val file = File(filePath)
+        if (file.exists()) {
+            BitmapFactory.decodeFile(filePath)?.asImageBitmap()
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        Log.e("PersonSection", "Failed to load image from file: $filePath", e)
+        null
+    }
+}
+
+fun getDrawableResourceId(context: Context, resourceName: String): Int? {
+    return try {
+        val resId = context.resources.getIdentifier(resourceName, "drawable", context.packageName)
+        if (resId != 0) resId else null
+    } catch (e: Exception) {
+        Log.e("PersonSection", "Failed to get resource ID for: $resourceName", e)
+        null
     }
 }

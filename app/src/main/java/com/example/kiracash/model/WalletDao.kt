@@ -50,6 +50,4 @@ interface WalletDao {
 
     @Query("SELECT * FROM wallets WHERE owner = :walletOwner")
     fun getWalletByOwner(walletOwner: String): Flow<Wallet>
-
-
 }

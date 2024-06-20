@@ -29,4 +29,8 @@ interface PaidItemDao {
 
     @Query("UPDATE paid_items SET isPaid = 0 WHERE id = :itemId")
     suspend fun markItemAsUnpaid(itemId: Int)
+
+    @Query("SELECT * FROM paid_items WHERE walletId = :walletId")
+    fun getPaidItemsByWalletId(walletId: Int): Flow<List<PaidItem>>
+
 }
