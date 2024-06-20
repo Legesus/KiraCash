@@ -147,13 +147,13 @@ fun WalletDropdown() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text("Paid", color = Color.White)
+                Text("Owe You ", color = Color.White)
                 Switch(
                     checked = showAmountOwe,
                     onCheckedChange = { showAmountOwe = it },
                     colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
                 )
-                Text("Owe", color = Color.White)
+                Text(" Owe Them", color = Color.White)
             }
         }
 

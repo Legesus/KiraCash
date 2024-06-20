@@ -131,13 +131,13 @@ fun StatisticScreen(navController: NavHostController) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text("Amount Paid")
+                Text("They Owe You ")
                 Switch(
                     checked = showAmountOwe,
                     onCheckedChange = { showAmountOwe = it },
                     colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
                 )
-                Text("Amount Owe")
+                Text(" You owe them")
             }
 
             // Title and Chart
