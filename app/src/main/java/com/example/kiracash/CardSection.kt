@@ -1,6 +1,13 @@
 package com.example.kiracash
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -8,7 +15,13 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,19 +35,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+val DarkRed = Color(0xFF8B0000)  // Custom dark red color
+val DarkGreen = Color(0xFF006400)  // Custom dark green color
+
 @Composable
 fun CardItem(title: String, cash: Float, isDebtPositive: Boolean = false) {
     val textColor = when (title) {
-        "Owe" -> Color.Red
-        "Are Owed" -> Color(0xFF008000)
-        "Total Budget" -> if (isDebtPositive) Color(0xFF008000) else Color.Red
+        "Owe Them" -> DarkRed
+        "Owe You" -> DarkGreen
+        "Expenses" -> Color.Red
+        "Income" -> Color.Green
+        "Total" -> if (isDebtPositive) Color.Green else Color.Red
         else -> MaterialTheme.colorScheme.onBackground
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
+            .height(70.dp)
             .padding(10.dp),
         backgroundColor = MaterialTheme.colorScheme.inverseOnSurface,
         shape = RoundedCornerShape(16.dp)
@@ -92,9 +110,15 @@ fun CardSection() {
         }
     }
 
-    Column {
-        CardItem("Total Budget", totalBudget)
-        CardItem("Are Owed", amountPaid)
-        CardItem("Owe", amountOwe)
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+    ) {
+        item { CardItem("Income", 0f) }
+        item { CardItem("Expenses", 0f) }
+        item { CardItem("Owe You", amountPaid) }
+        item { CardItem("Owe Them", amountOwe) }
+        item { CardItem("Total", totalBudget) }
     }
 }
