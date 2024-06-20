@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,12 +28,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -89,7 +90,7 @@ fun ReceiptDialog(
     onDismiss: () -> Unit,
     onFinalize: (Map<Item, Pair<Wallet?, Boolean>>) -> Unit
 ) {
-    val selectedWalletsAndPaidStatus = remember { mutableStateMapOf<Item, Pair<Wallet?, Boolean>>() }
+    val selectedWalletsAndStatus = remember { mutableStateMapOf<Item, Pair<Wallet?, Boolean>>() }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -108,76 +109,127 @@ fun ReceiptDialog(
             ) {
                 Text(
                     text = "Receipt ID: ${receipt.id}",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 14.sp),
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
                 items.forEach { item ->
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(bottom = 8.dp)
                     ) {
-                        Text(
-                            text = String.format("%-20s RM %s", item.name, item.price),
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        var expanded by remember { mutableStateOf(false) }
-                        var selectedWallet by remember { mutableStateOf<Wallet?>(if (wallets.isNotEmpty()) wallets[0] else null) }
-                        var isPaid by remember { mutableStateOf(false) }
-
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = !expanded },
-                            modifier = Modifier.weight(1f)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TextField(
-                                modifier = Modifier
-                                    .menuAnchor()
-                                    .fillMaxWidth(),
-                                readOnly = true,
-                                value = selectedWallet?.owner ?: "None",
-                                onValueChange = {},
-                                label = { Text("Select Wallet") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                            Text(
+                                text = "${item.name}\nRM ${item.price}",
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 12.sp)
                             )
-                            ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false },
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            var expandedWallet by remember { mutableStateOf(false) }
+                            var selectedWallet by remember { mutableStateOf<Wallet?>(if (wallets.isNotEmpty()) wallets[0] else null) }
+                            var expandedStatus by remember { mutableStateOf(false) }
+                            var selectedStatus by remember { mutableStateOf(true) }
+
+                            // Wallet Dropdown
+                            ExposedDropdownMenuBox(
+                                expanded = expandedWallet,
+                                onExpandedChange = { expandedWallet = !expandedWallet },
+                                modifier = Modifier.weight(1f)
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("None") },
-                                    onClick = {
-                                        selectedWallet = null
-                                        expanded = false
-
-                                        selectedWalletsAndPaidStatus[item] = Pair(null, isPaid)
-                                    },
+                                TextField(
+                                    modifier = Modifier
+                                        .menuAnchor()
+                                        .fillMaxWidth(),
+                                    readOnly = true,
+                                    value = selectedWallet?.owner ?: "Select Wallet",
+                                    onValueChange = {},
+                                    label = { Text("Wallet", fontSize = 10.sp) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedWallet) },
+                                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp),
+                                    colors = ExposedDropdownMenuDefaults.textFieldColors(),
                                 )
-                                wallets.forEach { wallet ->
+                                ExposedDropdownMenu(
+                                    expanded = expandedWallet,
+                                    onDismissRequest = { expandedWallet = false },
+                                ) {
                                     DropdownMenuItem(
-                                        text = { Text(wallet.owner) },
+                                        text = { Text("None", fontSize = 12.sp) },
                                         onClick = {
-                                            selectedWallet = wallet
-                                            expanded = false
+                                            selectedWallet = null
+                                            expandedWallet = false
 
-                                            selectedWalletsAndPaidStatus[item] = Pair(wallet, isPaid)
+                                            selectedWalletsAndStatus[item] = Pair(null, selectedStatus)
+                                        },
+                                    )
+                                    wallets.forEach { wallet ->
+                                        DropdownMenuItem(
+                                            text = { Text(wallet.owner, fontSize = 12.sp) },
+                                            onClick = {
+                                                selectedWallet = wallet
+                                                expandedWallet = false
+
+                                                selectedWalletsAndStatus[item] = Pair(wallet, selectedStatus)
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // Status Dropdown
+                            ExposedDropdownMenuBox(
+                                expanded = expandedStatus,
+                                onExpandedChange = { expandedStatus = !expandedStatus },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                TextField(
+                                    modifier = Modifier
+                                        .menuAnchor()
+                                        .fillMaxWidth(),
+                                    readOnly = true,
+                                    value = if (selectedStatus) "Owe You (+)" else "Owe Them (-)",
+                                    onValueChange = {},
+                                    label = { Text("Status", fontSize = 10.sp) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
+                                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp),
+                                    colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedStatus,
+                                    onDismissRequest = { expandedStatus = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Owe You", fontSize = 12.sp) },
+                                        onClick = {
+                                            selectedStatus = true
+                                            expandedStatus = false
+
+                                            selectedWalletsAndStatus[item] = Pair(selectedWallet, selectedStatus)
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Owe Them", fontSize = 12.sp) },
+                                        onClick = {
+                                            selectedStatus = false
+                                            expandedStatus = false
+
+                                            selectedWalletsAndStatus[item] = Pair(selectedWallet, selectedStatus)
                                         },
                                     )
                                 }
                             }
                         }
-
-                        Checkbox(
-                            checked = isPaid,
-                            onCheckedChange = { isChecked ->
-                                isPaid = isChecked
-                                selectedWalletsAndPaidStatus[item] = Pair(selectedWallet, isChecked)
-                            }
-                        )
                     }
                 }
 
@@ -185,8 +237,8 @@ fun ReceiptDialog(
 
                 Button(
                     onClick = {
-                        Log.d("ReceiptDialog", "Size of selectedWalletsAndPaidStatus: ${selectedWalletsAndPaidStatus.size}")
-                        onFinalize(selectedWalletsAndPaidStatus)
+                        Log.d("ReceiptDialog", "Size of selectedWalletsAndStatus: ${selectedWalletsAndStatus.size}")
+                        onFinalize(selectedWalletsAndStatus)
                         onDismiss()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
@@ -198,6 +250,10 @@ fun ReceiptDialog(
         }
     }
 }
+
+
+
+
 
 @Composable
 fun ReceiptItemsDialog(
