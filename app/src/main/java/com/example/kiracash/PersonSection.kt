@@ -161,6 +161,10 @@ class PersonSection {
             )
         }
 
+        people.forEach {
+            Log.d("PersonSection", "Person: ${it.name}, Cash In: ${it.cashIn}, Cash Out: ${it.cashOut}")
+        }
+
         // Display the list of people
         PersonList(people, Modifier.padding(16.dp))
     }

@@ -82,11 +82,19 @@ fun StatisticScreen(navController: NavHostController) {
             walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
                 wallets = walletList
                 totalAmount = walletList.sumOf { it.amountOwe }
+                Log.d("StatisticScreen", "Total Amount Owe: $totalAmount")
+                walletList.forEach {
+                    Log.d("StatisticScreen", "Wallet: ${it.owner}, Amount Owe: ${it.amountOwe}")
+                }
             }
         } else {
             walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
                 wallets = walletList
                 totalAmount = walletList.sumOf { it.amountPaid }
+                Log.d("StatisticScreen", "Total Amount Paid: $totalAmount")
+                walletList.forEach {
+                    Log.d("StatisticScreen", "Wallet: ${it.owner}, Amount Paid: ${it.amountPaid}")
+                }
             }
         }
     }
