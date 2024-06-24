@@ -79,7 +79,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Acknowledgements/Credits
 
-- [Google](https://developers.google.com/ml-kit/vision/text-recognition) for the ML Kit.
+- [Google Gemini](https://ai.google.dev/) for advanced AI capabilities.
 - [Room Persistence Library](https://developer.android.com/jetpack/androidx/releases/room) for the database management.
 - [Jetpack Compose](https://developer.android.com/jetpack/compose) for the UI components.
 
