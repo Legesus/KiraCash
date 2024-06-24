@@ -22,6 +22,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +69,9 @@ fun StatisticScreen(navController: NavHostController) {
     val paidItemDao = AppDatabase.getDatabase(context).paidItemDao()
     Log.d("StatisticScreen", "Got paidItemDao: $paidItemDao")
 
+    // Collect paid items
+    val paidItemsFlow = paidItemDao.getPaidItems().collectAsState(initial = emptyList())
+
     var wallets by remember { mutableStateOf(emptyList<Wallet>()) }
     Log.d("StatisticScreen", "Initialized wallets state")
 
@@ -89,10 +93,14 @@ fun StatisticScreen(navController: NavHostController) {
             }
         } else {
             walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
-                wallets = walletList
-                totalAmount = walletList.sumOf { it.amountPaid }
+                // Map wallets to include the sum of paid items
+                wallets = walletList.map { wallet ->
+                    val paidItems = paidItemsFlow.value.filter { it.walletId == wallet.id }
+                    wallet.copy(amountPaid = paidItems.sumOf { it.price })
+                }
+                totalAmount = wallets.sumOf { it.amountPaid }
                 Log.d("StatisticScreen", "Total Amount Paid: $totalAmount")
-                walletList.forEach {
+                wallets.forEach {
                     Log.d("StatisticScreen", "Wallet: ${it.owner}, Amount Paid: ${it.amountPaid}")
                 }
             }

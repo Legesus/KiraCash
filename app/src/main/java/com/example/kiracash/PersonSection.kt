@@ -1,6 +1,5 @@
 package com.example.kiracash
 
-import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -26,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
@@ -53,7 +51,6 @@ fun PersonList(people: List<Person>, modifier: Modifier = Modifier) {
 fun PersonRow(person: Person) {
     val context = LocalContext.current
     val bitmap = loadBitmapFromFile(person.walletPicture)
-    val resourceId = getDrawableResourceId(context, person.walletPicture)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -72,17 +69,15 @@ fun PersonRow(person: Person) {
                     contentDescription = null,
                     modifier = Modifier.size(50.dp)
                 )
-            } else if (resourceId != null) {
-                Image(
-                    painter = painterResource(id = resourceId),
-                    contentDescription = null,
-                    modifier = Modifier.size(50.dp)
-                )
             } else {
+                val painter = rememberImagePainter(
+                    data = person.walletPicture,
+                    builder = {
+                        error(R.drawable.proficon) // Fallback to proficon.jpg in res/drawable if the image fails to load
+                    }
+                )
                 Image(
-                    painter = rememberImagePainter(data = person.walletPicture, builder = {
-                        error(R.drawable.proficon) // Fallback image
-                    }),
+                    painter = painter,
                     contentDescription = null,
                     modifier = Modifier.size(50.dp)
                 )
@@ -161,10 +156,6 @@ class PersonSection {
             )
         }
 
-        people.forEach {
-            Log.d("PersonSection", "Person: ${it.name}, Cash In: ${it.cashIn}, Cash Out: ${it.cashOut}")
-        }
-
         // Display the list of people
         PersonList(people, Modifier.padding(16.dp))
     }
@@ -180,16 +171,6 @@ fun loadBitmapFromFile(filePath: String): ImageBitmap? {
         }
     } catch (e: Exception) {
         Log.e("PersonSection", "Failed to load image from file: $filePath", e)
-        null
-    }
-}
-
-fun getDrawableResourceId(context: Context, resourceName: String): Int? {
-    return try {
-        val resId = context.resources.getIdentifier(resourceName, "drawable", context.packageName)
-        if (resId != 0) resId else null
-    } catch (e: Exception) {
-        Log.e("PersonSection", "Failed to get resource ID for: $resourceName", e)
         null
     }
 }
