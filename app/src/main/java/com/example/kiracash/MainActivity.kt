@@ -39,14 +39,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    val mockNavController = rememberNavController()
-    HomeScreen(navController = mockNavController)
-}
-
 @Composable
 fun HomeScreen(navController: NavHostController) {
     KiraCashTheme {
@@ -78,9 +70,7 @@ fun HomeScreen(navController: NavHostController) {
                     .fillMaxSize()
                     .padding(padding)
             ) {
-
                 CardSection()
-
                 Text(
                     modifier = Modifier.padding(8.dp),
                     text = "People",
@@ -88,9 +78,7 @@ fun HomeScreen(navController: NavHostController) {
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
-
                 PersonSection().PersonSectionContent()
-
                 Spacer(modifier = Modifier.height(100.dp))
                 Text(
                     modifier = Modifier.padding(16.dp),
@@ -103,4 +91,11 @@ fun HomeScreen(navController: NavHostController) {
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    val mockNavController = rememberNavController()
+    HomeScreen(navController = mockNavController)
 }

@@ -71,6 +71,7 @@ import com.example.kiracash.model.Wallet
 import com.example.kiracash.model.WalletItemJoin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class OCRActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -251,10 +252,6 @@ fun ReceiptDialog(
     }
 }
 
-
-
-
-
 @Composable
 fun ReceiptItemsDialog(
     receipt: Receipt,
@@ -392,8 +389,10 @@ fun OCRScreen(navController: NavHostController) {
                     showLoading.value = true
                     val processedItems = imageProcessor.processImage(imageBitmap)
                     jsonString.value = imageProcessor.getJsonString()
-                    showDialog.value = true
-                    showLoading.value = false
+                    withContext(Dispatchers.Main) {
+                        showDialog.value = true
+                        showLoading.value = false
+                    }
                 }
             }
         }
@@ -408,12 +407,15 @@ fun OCRScreen(navController: NavHostController) {
                     showLoading.value = true
                     val processedItems = imageProcessor.processImage(bitmap)
                     jsonString.value = imageProcessor.getJsonString()
-                    showDialog.value = true
-                    showLoading.value = false
+                    withContext(Dispatchers.Main) {
+                        showDialog.value = true
+                        showLoading.value = false
+                    }
                 }
             }
         }
     )
+
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()

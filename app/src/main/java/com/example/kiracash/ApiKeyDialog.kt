@@ -1,6 +1,6 @@
 package com.example.kiracash
 
-import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,13 +17,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ApiKeyDialog(onDismiss: () -> Unit, onApiKeyChanged: () -> Unit) {
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+fun ApiKeyDialog(
+    sharedPreferences: SharedPreferences,
+    onDismiss: () -> Unit,
+    onApiKeyChanged: () -> Unit
+) {
     val apiKey = remember { mutableStateOf(sharedPreferences.getString(BuildConfig.GEMINI_API_KEY, "") ?: "") }
 
     AlertDialog(

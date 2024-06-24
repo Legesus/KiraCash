@@ -70,7 +70,7 @@ fun StatisticScreen(navController: NavHostController) {
     Log.d("StatisticScreen", "Got paidItemDao: $paidItemDao")
 
     // Collect paid items
-    val paidItemsFlow = paidItemDao.getPaidItems().collectAsState(initial = emptyList())
+    val paidItemsFlow = paidItemDao.getAllPaidItems().collectAsState(initial = emptyList())
 
     var wallets by remember { mutableStateOf(emptyList<Wallet>()) }
     Log.d("StatisticScreen", "Initialized wallets state")
@@ -81,7 +81,7 @@ fun StatisticScreen(navController: NavHostController) {
     var showAmountOwe by remember { mutableStateOf(false) }
     Log.d("StatisticScreen", "Initialized showAmountOwe state")
 
-    LaunchedEffect(showAmountOwe) {
+    LaunchedEffect(showAmountOwe, paidItemsFlow.value) {
         if (showAmountOwe) {
             walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
                 wallets = walletList
@@ -95,7 +95,7 @@ fun StatisticScreen(navController: NavHostController) {
             walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
                 // Map wallets to include the sum of paid items
                 wallets = walletList.map { wallet ->
-                    val paidItems = paidItemsFlow.value.filter { it.walletId == wallet.id }
+                    val paidItems = paidItemsFlow.value.filter { it.walletId == wallet.id && it.isPaid }
                     wallet.copy(amountPaid = paidItems.sumOf { it.price })
                 }
                 totalAmount = wallets.sumOf { it.amountPaid }

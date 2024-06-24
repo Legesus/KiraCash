@@ -50,7 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
                 }
             }
 
-            suspend fun populateDatabase(db: AppDatabase) {
+            private suspend fun populateDatabase(db: AppDatabase) {
                 // Insert the sample data here
                 val itemDao = db.itemDao()
                 val receiptDao = db.receiptDao()
@@ -67,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                     Wallet(owner = "John Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFF0000),
                     Wallet(owner = "Jane Doe", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x00FF00),
                     Wallet(owner = "John Smith", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0x0000FF),
-                    Wallet(owner = "Myself", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFFFF00),
+                    Wallet(owner = "Myself", amountPaid = 0.0, amountOwe = 0.0, walletPicture = "proficon", walletColor = 0xFFFF00)
                 )
 
                 // Insert wallets into the database
@@ -132,3 +132,4 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+

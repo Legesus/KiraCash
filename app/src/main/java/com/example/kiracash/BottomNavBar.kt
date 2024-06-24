@@ -1,6 +1,5 @@
 package com.example.kiracash
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
@@ -8,8 +7,6 @@ import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.QrCode
-import androidx.compose.material.icons.rounded.Scanner
-import androidx.compose.material.icons.rounded.SettingsOverscan
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -17,17 +14,17 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.kiracash.data.BottomNav
 
 @Composable
 fun NavHostController.currentRoute(): String? {
-    val navBackStackEntry = this.currentBackStackEntryAsState().value
+    val navBackStackEntry by this.currentBackStackEntryAsState()
     return navBackStackEntry?.destination?.route
 }
 
@@ -49,7 +46,7 @@ val items = listOf(
 fun BottomNavBar(navController: NavHostController) {
     val currentRoute = navController.currentRoute()
     NavigationBar {
-        Row (
+        Row(
             modifier = Modifier.background(MaterialTheme.colorScheme.inverseOnSurface)
         ) {
             items.forEach { item ->
@@ -88,6 +85,5 @@ fun BottomNavBar(navController: NavHostController) {
 fun PreviewBottomNavBar() {
     // Create a mock NavController
     val mockNavController = rememberNavController()
-
     BottomNavBar(navController = mockNavController)
 }

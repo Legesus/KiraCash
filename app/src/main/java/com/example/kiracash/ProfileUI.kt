@@ -1,3 +1,4 @@
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -122,7 +123,7 @@ fun ProfileScreen(navController: NavHostController) {
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        myselfWallet?.owner ?: "Loading...",
+                        text = myselfWallet?.owner ?: "Loading...",
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
@@ -149,11 +150,13 @@ fun ProfileScreen(navController: NavHostController) {
         }
 
         if (showDialog.value) {
+            val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
             ApiKeyDialog(
                 onDismiss = { showDialog.value = false },
                 onApiKeyChanged = {
                     // Handle any actions needed after the API key is changed
-                }
+                },
+                sharedPreferences = sharedPreferences // Pass sharedPreferences here
             )
         }
     }

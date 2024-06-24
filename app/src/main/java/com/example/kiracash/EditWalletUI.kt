@@ -57,7 +57,9 @@ import com.vanpra.composematerialdialogs.color.ARGBPickerState
 import com.vanpra.composematerialdialogs.color.ColorPalette
 import com.vanpra.composematerialdialogs.color.colorChooser
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -79,12 +81,17 @@ fun EditWalletUI(navController: NavController) {
 
     val colorPickerDialogState = rememberMaterialDialogState()
 
+    // Inside the function where image processing is triggered
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            val imagePath = saveImageToInternalStorage(context, it)
-            walletPicture.value = imagePath
+            coroutineScope.launch(Dispatchers.IO) {
+                val imagePath = saveImageToInternalStorage(context, it)
+                withContext(Dispatchers.Main) {
+                    walletPicture.value = imagePath
+                }
+            }
         }
     }
 

@@ -53,6 +53,7 @@ import com.example.kiracash.model.PaidItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DebtMenuActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,23 +107,19 @@ fun WalletDropdown() {
     val paidItemDao = db.paidItemDao()
     val coroutineScope = rememberCoroutineScope()
 
-    // State to hold list of wallets and the selected wallet
     var wallets by remember { mutableStateOf(emptyList<String>()) }
     var selectedWallet by remember { mutableStateOf("") }
     var walletId by remember { mutableStateOf(0) }
-
-    // State to hold items linked to the selected wallet
     var items by remember { mutableStateOf(emptyList<PaidItem>()) }
-
-    // State to toggle between amountPaid and amountOwe
     var showAmountOwe by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        walletDao.getAllWallets().collect { walletList ->
-            wallets = walletList.map { it.owner }
-            if (wallets.isNotEmpty()) {
-                selectedWallet = wallets[0]
-                coroutineScope.launch(Dispatchers.IO) {
+        coroutineScope.launch(Dispatchers.IO) {
+            val walletList = walletDao.getAllWallets().first()
+            withContext(Dispatchers.Main) {
+                wallets = walletList.map { it.owner }
+                if (wallets.isNotEmpty()) {
+                    selectedWallet = wallets[0]
                     walletId = walletDao.getWalletIdByOwner(selectedWallet).first()
                     items = paidItemDao.getAllPaidItems().first().filter { it.walletId == walletId }
                 }
@@ -142,8 +139,6 @@ fun WalletDropdown() {
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
-            // Toggle Switch
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -242,6 +237,7 @@ fun ItemsList(walletId: Int, showAmountOwe: Boolean) {
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

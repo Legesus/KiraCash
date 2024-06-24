@@ -18,7 +18,12 @@ import androidx.compose.material.Card
 import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +34,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
 import com.example.kiracash.model.AppDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 data class Person(
@@ -50,7 +57,12 @@ fun PersonList(people: List<Person>, modifier: Modifier = Modifier) {
 @Composable
 fun PersonRow(person: Person) {
     val context = LocalContext.current
-    val bitmap = loadBitmapFromFile(person.walletPicture)
+    var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+
+    LaunchedEffect(person.walletPicture) {
+        bitmap = loadBitmapFromFile(person.walletPicture)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -65,7 +77,7 @@ fun PersonRow(person: Person) {
         ) {
             if (bitmap != null) {
                 Image(
-                    bitmap = bitmap,
+                    bitmap = bitmap!!,
                     contentDescription = null,
                     modifier = Modifier.size(50.dp)
                 )
@@ -73,7 +85,7 @@ fun PersonRow(person: Person) {
                 val painter = rememberImagePainter(
                     data = person.walletPicture,
                     builder = {
-                        error(R.drawable.proficon) // Fallback to proficon.jpg in res/drawable if the image fails to load
+                        error(R.drawable.proficon)
                     }
                 )
                 Image(
@@ -87,16 +99,31 @@ fun PersonRow(person: Person) {
                 Text(text = person.name, color = Color.White)
                 Row {
                     Text(text = "They owe you: ", color = Color.White)
-                    Text(text = "RM ${person.cashIn}", color = if (person.cashIn > 0) Color(0xFF008000) else Color.White) // Green color for cashIn if it's greater than 0
+                    Text(text = "RM ${person.cashIn}", color = if (person.cashIn > 0) Color(0xFF008000) else Color.White)
                 }
                 Row {
                     Text(text = "You owe them: ", color = Color.White)
-                    Text(text = "RM ${person.cashOut}", color = if (person.cashOut > 0) Color.Red else Color.White) // Red color for cashOut if it's greater than 0
+                    Text(text = "RM ${person.cashOut}", color = if (person.cashOut > 0) Color.Red else Color.White)
                 }
             }
         }
     }
 }
+
+suspend fun loadBitmapFromFile(filePath: String): ImageBitmap? = withContext(Dispatchers.IO) {
+    return@withContext try {
+        val file = File(filePath)
+        if (file.exists()) {
+            BitmapFactory.decodeFile(filePath)?.asImageBitmap()
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        Log.e("PersonSection", "Failed to load image from file: $filePath", e)
+        null
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
@@ -158,19 +185,5 @@ class PersonSection {
 
         // Display the list of people
         PersonList(people, Modifier.padding(16.dp))
-    }
-}
-
-fun loadBitmapFromFile(filePath: String): ImageBitmap? {
-    return try {
-        val file = File(filePath)
-        if (file.exists()) {
-            BitmapFactory.decodeFile(filePath)?.asImageBitmap()
-        } else {
-            null
-        }
-    } catch (e: Exception) {
-        Log.e("PersonSection", "Failed to load image from file: $filePath", e)
-        null
     }
 }
