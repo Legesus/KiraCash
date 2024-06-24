@@ -19,13 +19,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+const val GEMINI_API_KEY_PREF = "GEMINI_API_KEY"
+
 @Composable
 fun ApiKeyDialog(
     sharedPreferences: SharedPreferences,
     onDismiss: () -> Unit,
     onApiKeyChanged: () -> Unit
 ) {
-    val apiKey = remember { mutableStateOf(sharedPreferences.getString(BuildConfig.GEMINI_API_KEY, "") ?: "") }
+    val apiKey = remember { mutableStateOf(sharedPreferences.getString(GEMINI_API_KEY_PREF, "") ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -45,7 +47,7 @@ fun ApiKeyDialog(
                 ) {
                     Button(
                         onClick = {
-                            sharedPreferences.edit().putString(BuildConfig.GEMINI_API_KEY, apiKey.value).apply()
+                            sharedPreferences.edit().putString(GEMINI_API_KEY_PREF, apiKey.value).apply()
                             onApiKeyChanged()
                             onDismiss()
                         },
@@ -55,7 +57,7 @@ fun ApiKeyDialog(
                     }
                     Button(
                         onClick = {
-                            sharedPreferences.edit().remove(BuildConfig.GEMINI_API_KEY).apply()
+                            sharedPreferences.edit().remove(GEMINI_API_KEY_PREF).apply()
                             apiKey.value = ""
                             onApiKeyChanged()
                             onDismiss()

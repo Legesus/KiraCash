@@ -87,7 +87,6 @@ fun HomeScreen(navController: NavHostController) {
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
-                QuickActionsRow()
             }
         }
     }
