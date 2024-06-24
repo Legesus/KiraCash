@@ -1,5 +1,3 @@
-package com.example.kiracash
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +25,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +38,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.kiracash.ApiKeyDialog
+import com.example.kiracash.BottomNavBar
+import com.example.kiracash.MainDestinations
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.Wallet
 import kotlinx.coroutines.flow.Flow
@@ -66,6 +69,8 @@ fun ProfileScreen(navController: NavHostController) {
     val myselfWalletFlow: Flow<Wallet> = walletDao.getWalletByOwner("Myself")
     val coroutineScope = rememberCoroutineScope()
     val myselfWallet by myselfWalletFlow.collectAsState(initial = null)
+
+    val showDialog = remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -126,8 +131,8 @@ fun ProfileScreen(navController: NavHostController) {
             }
 
             val options = listOf(
-                Option(text = "Configure Gemini API", action = { /*TODO*/ }),
-                Option(text = "Edit Wallet", action = { navController.navigate(MainDestinations.EDIT_WALLET_ROUTE) }),
+                Option(text = "Configure Gemini API", action = { showDialog.value = true }),
+                Option(text = "Edit Wallet", action = { navController.navigate(MainDestinations.EDIT_WALLET_ROUTE) })
             )
 
             for (option in options) {
@@ -141,6 +146,15 @@ fun ProfileScreen(navController: NavHostController) {
                     Text(option.text, color = Color.White)
                 }
             }
+        }
+
+        if (showDialog.value) {
+            ApiKeyDialog(
+                onDismiss = { showDialog.value = false },
+                onApiKeyChanged = {
+                    // Handle any actions needed after the API key is changed
+                }
+            )
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.kiracash
 
 import EditWalletUI
+import ProfileScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
