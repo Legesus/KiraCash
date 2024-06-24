@@ -33,4 +33,7 @@ interface PaidItemDao {
     @Query("SELECT * FROM paid_items WHERE walletId = :walletId")
     fun getPaidItemsByWalletId(walletId: Int): Flow<List<PaidItem>>
 
+    @Query("UPDATE paid_items SET isSettled = :isSettled WHERE id = :itemId")
+    suspend fun markItemAsSettled(itemId: Int, isSettled: Boolean)
+
 }

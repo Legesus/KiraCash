@@ -32,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -199,12 +200,19 @@ fun WalletDropdown() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        ItemsList(items = items, showAmountOwe = showAmountOwe)
+        ItemsList(walletId = walletId, showAmountOwe = showAmountOwe)
     }
 }
 
 @Composable
-fun ItemsList(items: List<PaidItem>, showAmountOwe: Boolean) {
+fun ItemsList(walletId: Int, showAmountOwe: Boolean) {
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val paidItemDao = db.paidItemDao()
+
+    val items by paidItemDao.getPaidItemsByWalletId(walletId).collectAsState(initial = emptyList())
+
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -221,7 +229,15 @@ fun ItemsList(items: List<PaidItem>, showAmountOwe: Boolean) {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f)
                 )
-                Checkbox(checked = true, onCheckedChange = {}, colors = CheckboxDefaults.colors(checkedColor = Color(0xFF509BFF)))
+                Checkbox(
+                    checked = item.isSettled,
+                    onCheckedChange = { isChecked ->
+                        coroutineScope.launch(Dispatchers.IO) {
+                            paidItemDao.markItemAsSettled(item.id, isChecked)
+                        }
+                    },
+                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF509BFF))
+                )
             }
         }
     }
