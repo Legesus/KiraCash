@@ -46,9 +46,7 @@ val items = listOf(
 fun BottomNavBar(navController: NavHostController) {
     val currentRoute = navController.currentRoute()
     NavigationBar {
-        Row(
-            modifier = Modifier.background(MaterialTheme.colorScheme.inverseOnSurface)
-        ) {
+        Row(modifier = Modifier.background(MaterialTheme.colorScheme.inverseOnSurface)) {
             items.forEach { item ->
                 NavigationBarItem(
                     selected = currentRoute == item.route,
@@ -83,7 +81,6 @@ fun BottomNavBar(navController: NavHostController) {
 @Preview
 @Composable
 fun PreviewBottomNavBar() {
-    // Create a mock NavController
     val mockNavController = rememberNavController()
     BottomNavBar(navController = mockNavController)
 }

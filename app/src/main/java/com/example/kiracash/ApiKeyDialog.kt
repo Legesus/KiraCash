@@ -12,8 +12,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,7 +29,7 @@ fun ApiKeyDialog(
     onDismiss: () -> Unit,
     onApiKeyChanged: () -> Unit
 ) {
-    val apiKey = remember { mutableStateOf(sharedPreferences.getString(GEMINI_API_KEY_PREF, "") ?: "") }
+    var apiKey by remember { mutableStateOf(sharedPreferences.getString(GEMINI_API_KEY_PREF, "") ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -35,19 +37,21 @@ fun ApiKeyDialog(
         text = {
             Column {
                 TextField(
-                    value = apiKey.value,
-                    onValueChange = { apiKey.value = it },
+                    value = apiKey,
+                    onValueChange = { apiKey = it },
                     label = { Text("API Key") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
                 ) {
                     Button(
                         onClick = {
-                            sharedPreferences.edit().putString(GEMINI_API_KEY_PREF, apiKey.value).apply()
+                            sharedPreferences.edit().putString(GEMINI_API_KEY_PREF, apiKey).apply()
                             onApiKeyChanged()
                             onDismiss()
                         },
@@ -58,7 +62,7 @@ fun ApiKeyDialog(
                     Button(
                         onClick = {
                             sharedPreferences.edit().remove(GEMINI_API_KEY_PREF).apply()
-                            apiKey.value = ""
+                            apiKey = ""
                             onApiKeyChanged()
                             onDismiss()
                         },

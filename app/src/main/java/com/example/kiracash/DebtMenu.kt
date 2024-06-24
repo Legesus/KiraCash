@@ -238,7 +238,6 @@ fun ItemsList(walletId: Int, showAmountOwe: Boolean) {
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun DebtMenuPreview() {

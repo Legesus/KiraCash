@@ -11,15 +11,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -91,7 +92,6 @@ fun TopUpDialog(onDismiss: () -> Unit, onTopUp: (Float) -> Unit) {
     )
 }
 
-
 @Composable
 fun CardItem(title: String, cash: Float, onMoreClick: () -> Unit = {}) {
     val textColor = when (title) {
@@ -108,7 +108,9 @@ fun CardItem(title: String, cash: Float, onMoreClick: () -> Unit = {}) {
             .fillMaxWidth()
             .height(70.dp)
             .padding(10.dp),
-        backgroundColor = MaterialTheme.colorScheme.inverseOnSurface,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.inverseOnSurface
+        ),
         shape = RoundedCornerShape(16.dp)
     ) {
         Row(
@@ -142,7 +144,6 @@ fun CardItem(title: String, cash: Float, onMoreClick: () -> Unit = {}) {
         }
     }
 }
-
 
 @Composable
 fun CardSection() {
@@ -209,7 +210,6 @@ fun CardSection() {
         )
     }
 }
-
 
 @Preview
 @Composable
