@@ -1,6 +1,7 @@
 package com.example.kiracash
 
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ fun ApiKeyDialog(
     onDismiss: () -> Unit,
     onApiKeyChanged: () -> Unit
 ) {
+
     var apiKey by remember { mutableStateOf(sharedPreferences.getString(GEMINI_API_KEY_PREF, "") ?: "") }
 
     AlertDialog(
@@ -51,7 +53,8 @@ fun ApiKeyDialog(
                 ) {
                     Button(
                         onClick = {
-                            sharedPreferences.edit().putString(GEMINI_API_KEY_PREF, apiKey).apply()
+                            val success = sharedPreferences.edit().putString(GEMINI_API_KEY_PREF, apiKey).commit()
+                            Log.d("ApiKeyDialog", "API Key saved: $apiKey, success: $success")
                             onApiKeyChanged()
                             onDismiss()
                         },

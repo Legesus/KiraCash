@@ -150,13 +150,13 @@ fun ProfileScreen(navController: NavHostController) {
         }
 
         if (showDialog.value) {
-            val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val sharedPreferences = context.getSharedPreferences("KiraCashPreferences", Context.MODE_PRIVATE)
             ApiKeyDialog(
+                sharedPreferences = sharedPreferences, // Pass sharedPreferences here
                 onDismiss = { showDialog.value = false },
                 onApiKeyChanged = {
                     // Handle any actions needed after the API key is changed
-                },
-                sharedPreferences = sharedPreferences // Pass sharedPreferences here
+                }
             )
         }
     }
