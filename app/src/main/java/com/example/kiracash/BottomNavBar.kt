@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.AttachMoney
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.QrCode
@@ -36,6 +37,7 @@ data class BottomNav(
 
 val items = listOf(
     BottomNav("Home", Icons.Rounded.Home, MainDestinations.HOME_ROUTE),
+    BottomNav("Budget", Icons.Rounded.AttachMoney, MainDestinations.BUDGET_ROUTE),
     BottomNav("Wallet", Icons.Rounded.Wallet, MainDestinations.DEBT_MENU_ROUTE),
     BottomNav("Receipt", Icons.Rounded.QrCode, MainDestinations.QR_MENU_ROUTE),
     BottomNav("Statistic", Icons.Rounded.BarChart, MainDestinations.STATISTIC_SCREEN_ROUTE),
