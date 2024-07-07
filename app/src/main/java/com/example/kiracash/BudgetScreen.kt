@@ -5,22 +5,79 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.kiracash.model.AppDatabase
+import com.example.kiracash.model.Mission
+import com.example.kiracash.model.XPEntry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+
+enum class BudgetTabs(val title: String) {
+    PixelPlant("Pixel Plant"),
+    Missions("Missions"),
+    Goals("Goals")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val missionDao = db.missionDao()
+
+    var selectedTab by remember { mutableStateOf(BudgetTabs.PixelPlant) }
+
+    // Sample Missions data
+    val initialMissions = listOf(
+        Mission(title = "Save Daily", description = "Put aside at least 5% of your daily earnings.", xpReward = 15, isCompleted = false),
+        Mission(title = "Limit Eating Out", description = "Try not to eat out more than once today.", xpReward = 10, isCompleted = false),
+        Mission(title = "Track Spending", description = "Record every expense you make today.", xpReward = 8, isCompleted = false)
+    )
+
+    // Pixel Plant Data
+    val samplePlantName = "Green Buddy"
+    val xpHistory = remember { mutableStateListOf<XPEntry>() }
+    var totalXP by remember { mutableIntStateOf(calculateTotalXP(xpHistory)) }
+
+    // Observe mission completion changes
+    LaunchedEffect(Unit) {
+        launch(Dispatchers.IO) { // Use launch directly within LaunchedEffect
+            missionDao.getAllMissionsFlow().collect { missions ->
+                missions.forEach { mission ->
+                    if (mission.isCompleted) {
+                        val existingEntry = xpHistory.find { it.source == mission.title }
+                        if (existingEntry == null) {
+                            xpHistory.add(XPEntry(mission.title, mission.xpReward))
+                            totalXP += mission.xpReward
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -47,11 +104,31 @@ fun BudgetScreen(navController: NavHostController) {
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Include GoalList here
-            GoalList(goals = sampleGoals)
+            TabRow(selectedTabIndex = selectedTab.ordinal) {
+                BudgetTabs.entries.forEach { tab ->
+                    Tab(
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        text = { Text(tab.title) }
+                    )
+                }
+            }
+            when (selectedTab) {
+                BudgetTabs.PixelPlant ->
+                    PixelPlant(
+                        initialProgress = totalXP / 350.0,
+                        plantName = samplePlantName,
+                        xpHistory = xpHistory
+                    )
+                BudgetTabs.Missions ->
+                    MissionListWithSwitches(missions = initialMissions)
+                BudgetTabs.Goals ->
+                    GoalList(goals = sampleGoals)
+            }
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

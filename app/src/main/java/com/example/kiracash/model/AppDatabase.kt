@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-@Database(entities = [Receipt::class, Item::class, Wallet::class, WalletItemJoin::class, ReceiptItemJoin::class, PaidItem::class], version = 2)
+@Database(entities = [Receipt::class, Item::class, Wallet::class, WalletItemJoin::class, ReceiptItemJoin::class, PaidItem::class, Mission::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun receiptDao(): ReceiptDao
     abstract fun itemDao(): ItemDao
@@ -18,6 +18,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun walletItemJoinDao(): WalletItemJoinDao
     abstract fun receiptItemJoinDao(): ReceiptItemJoinDao
     abstract fun paidItemDao(): PaidItemDao
+    abstract fun missionDao(): MissionDao
 
     companion object {
         @Volatile

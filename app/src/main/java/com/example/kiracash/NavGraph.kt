@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 
 object MainDestinations {
     const val HOME_ROUTE = "home"
+    const val BUDGET_ROUTE = "budget"
     const val DEBT_MENU_ROUTE = "debtMenu"
     const val STATISTIC_SCREEN_ROUTE = "statisticScreen"
     const val ACCOUNT_ROUTE = "account"
@@ -25,6 +26,9 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
     ) {
         composable(MainDestinations.HOME_ROUTE) {
             HomeScreen(navController = navController)
+        }
+        composable(MainDestinations.BUDGET_ROUTE) {
+            BudgetScreen(navController = navController) // You need to create this Composable function
         }
         composable(MainDestinations.DEBT_MENU_ROUTE) {
             DebtMenuScreen(navController = navController)
