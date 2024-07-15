@@ -28,7 +28,7 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
             HomeScreen(navController = navController)
         }
         composable(MainDestinations.BUDGET_ROUTE) {
-            BudgetScreen(navController = navController) // You need to create this Composable function
+            BudgetScreen(navController = navController)
         }
         composable(MainDestinations.DEBT_MENU_ROUTE) {
             DebtMenuScreen(navController = navController)
@@ -47,4 +47,9 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
         }
     }
 
+    ExtendedButton(
+        onScanClick = { /* Handle scan click */ },
+        onUploadClick = { /* Handle upload click */ },
+        onSaveToGoalsClick = { /* Handle save to goals click */ }
+    )
 }
