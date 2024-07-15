@@ -72,6 +72,12 @@ fun BudgetScreen(navController: NavHostController) {
                             xpHistory.add(XPEntry(mission.title, mission.xpReward))
                             totalXP += mission.xpReward
                         }
+                    } else { // Check if mission is no longer completed
+                        val existingEntry = xpHistory.find { it.source == mission.title }
+                        if (existingEntry != null) {
+                            xpHistory.remove(existingEntry)
+                            totalXP -= mission.xpReward
+                        }
                     }
                 }
             }
@@ -121,9 +127,15 @@ fun BudgetScreen(navController: NavHostController) {
                         xpHistory = xpHistory
                     )
                 BudgetTabs.Missions ->
-                    MissionListWithSwitches(missions = initialMissions)
+                    MissionListWithSwitches(missions = initialMissions) { xpChange ->
+                        totalXP += xpChange
+                    }
                 BudgetTabs.Goals ->
-                    GoalList(goals = sampleGoals)
+                    GoalList(goals = sampleGoals) { xpChange ->
+                        totalXP += xpChange
+                        // You can add an XPEntry to xpHistory here if you want
+                        xpHistory.add(XPEntry("Goal Reached/Unreached", xpChange))
+                    }
             }
         }
     }

@@ -20,14 +20,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,23 +41,24 @@ data class Goal(
     val id: Int,
     var title: String,
     var amountGoal: Double,
-    var amountSaved: Double
+    var amountSaved: Double,
+    var isReached: MutableState<Boolean> = mutableStateOf(false) // Make isReached MutableState
 )
 
-val sampleGoals = mutableListOf(
-    Goal(1, "New Laptop", 1000.0, 450.0),
-    Goal(2, "Vacation", 3000.0, 850.0),
-    Goal(3, "Emergency Fund", 5000.0, 1200.0)
+val sampleGoals = mutableStateListOf(
+    Goal(1, "New Laptop", 1000.0, 450.0, isReached = mutableStateOf(false)),
+    Goal(2, "Vacation", 3000.0, 850.0, isReached = mutableStateOf(false)),
+    Goal(3, "Emergency Fund", 5000.0, 1200.0, isReached = mutableStateOf(false))
 )
 
 @Composable
-fun GoalItem(goal: Goal, onEdit: (Goal) -> Unit, onDelete: (Goal) -> Unit) {
-    val progress = (goal.amountSaved / goal.amountGoal).toFloat() // Ensure division results in a float
+fun GoalItem(goal: Goal, onEdit: (Goal) -> Unit, onDelete: (Goal) -> Unit, onGoalReachedChange: (Goal, Boolean, Int) -> Unit) {
+    val progress = (goal.amountSaved / goal.amountGoal).toFloat()
     Card(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(2.dp) // Use CardDefaults.elevatedCardElevation with smaller elevation
+        elevation = CardDefaults.elevatedCardElevation(2.dp)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
@@ -60,11 +66,14 @@ fun GoalItem(goal: Goal, onEdit: (Goal) -> Unit, onDelete: (Goal) -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = "Goal: RM ${goal.amountGoal}", maxLines = 1)
                 Text(text = "Saved: RM ${goal.amountSaved}", maxLines = 1)
+                Text(text = "XP: 100", maxLines = 1)
+                // Spacer
+                Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(4.dp), // Smaller height for progress indicator
+                        .height(4.dp),
                 )
             }
             Row(modifier = Modifier.wrapContentWidth()) {
@@ -74,13 +83,22 @@ fun GoalItem(goal: Goal, onEdit: (Goal) -> Unit, onDelete: (Goal) -> Unit) {
                 IconButton(onClick = { onDelete(goal) }) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete")
                 }
+                // Goal Reached Toggle
+                Switch(
+                    checked = goal.isReached.value, // Access the value using .value
+                    onCheckedChange = { isChecked ->
+                        goal.isReached.value = isChecked // Update the MutableState
+                        onGoalReachedChange(goal, isChecked, 100)
+                    },
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
+                )
             }
         }
     }
 }
 
 @Composable
-fun GoalList(goals: MutableList<Goal>) {
+fun GoalList(goals: MutableList<Goal>, onTotalXPChange: (Int) -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var newGoalTitle by remember { mutableStateOf("") }
     var newGoalAmount by remember { mutableStateOf("") }
@@ -98,6 +116,13 @@ fun GoalList(goals: MutableList<Goal>) {
                 },
                 onDelete = { goalToDelete ->
                     goals.remove(goalToDelete)
+                },
+                onGoalReachedChange = { updatedGoal, isChecked, xpReward ->
+                    if (isChecked) {
+                        onTotalXPChange(xpReward)
+                    } else {
+                        onTotalXPChange(-xpReward)
+                    }
                 }
             )
         }
@@ -182,5 +207,5 @@ fun GoalList(goals: MutableList<Goal>) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewGoalList() {
-    GoalList(goals = sampleGoals)
+    GoalList(goals = sampleGoals) {}
 }

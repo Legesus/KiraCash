@@ -22,4 +22,7 @@ interface MissionDao {
 
     @Query("SELECT * FROM missions")
     fun getAllMissionsFlow(): Flow<List<Mission>>
+
+    @Query("UPDATE missions SET isCompleted = :isCompleted")
+    fun updateMissionCompletionStatus(isCompleted: Boolean)
 }

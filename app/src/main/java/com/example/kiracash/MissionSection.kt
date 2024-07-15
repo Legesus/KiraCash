@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -34,12 +35,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.Mission
+import com.example.kiracash.model.MissionDao
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
+import java.util.Calendar
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @Composable
-fun MissionItemWithSwitch(mission: Mission, onMissionCompletionChange: (Mission, Boolean) -> Unit) {
+fun MissionItemWithSwitch(mission: Mission, onMissionCompletionChange: (Mission, Boolean, Int) -> Unit, onTotalXPChange: (Int) -> Unit) {
     val cardModifier = Modifier
         .padding(6.dp)
         .fillMaxWidth()
@@ -72,7 +77,12 @@ fun MissionItemWithSwitch(mission: Mission, onMissionCompletionChange: (Mission,
                 Switch(
                     checked = mission.isCompleted,
                     onCheckedChange = { isChecked ->
-                        onMissionCompletionChange(mission, isChecked) // Pass the whole mission object
+                        onMissionCompletionChange(mission, isChecked, mission.xpReward)
+                        if (isChecked) {
+                            onTotalXPChange(mission.xpReward)
+                        } else {
+                            onTotalXPChange(-mission.xpReward)
+                        }
                     },
                     colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
                 )
@@ -82,26 +92,41 @@ fun MissionItemWithSwitch(mission: Mission, onMissionCompletionChange: (Mission,
 }
 
 @Composable
-fun MissionListWithSwitches(missions: List<Mission>) {
+fun MissionListWithSwitches(missions: List<Mission>, onTotalXPChange: (Int) -> Unit) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val missionDao = db.missionDao()
     val coroutineScope = rememberCoroutineScope()
 
-    // Load initial missions into the database (only on first launch)
+    var timeUntilReset by remember { mutableStateOf(getTimeUntilNextReset()) }
+
+    // Observe missions from the database
+    val missionList by missionDao.getAllMissionsFlow().collectAsState(initial = emptyList())
+
+    // Total duration for the countdown in milliseconds (e.g., 24 hours)
+    val totalDuration = TimeUnit.HOURS.toMillis(24)
+
+    // Calculate the progress for the countdown
+    val progress = remember(timeUntilReset) { (totalDuration - timeUntilReset).toFloat() / totalDuration }
+
+    // Reset missions at midnight
     LaunchedEffect(Unit) {
-        coroutineScope.launch(Dispatchers.IO) {
-            // Check if the database is empty
-            if (missionDao.getAllMissions().isEmpty()) {
-                missions.forEach { mission ->
-                    missionDao.insertMission(mission)
-                }
+        while (true) {
+            delay(timeUntilReset)
+            coroutineScope.launch(Dispatchers.IO) {
+                missionDao.resetMissions()
             }
+            timeUntilReset = getTimeUntilNextReset()
         }
     }
 
-    // Observe missions from the database (now using a Flow)
-    val missionList by missionDao.getAllMissionsFlow().collectAsState(initial = emptyList())
+    // Update timeUntilReset every second
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000) // Use 1000 milliseconds instead of 1 second
+            timeUntilReset -= 1000
+        }
+    }
 
     var showDialog by remember { mutableStateOf(false) }
     var newMissionTitle by remember { mutableStateOf("") }
@@ -109,30 +134,40 @@ fun MissionListWithSwitches(missions: List<Mission>) {
     var newMissionXP by remember { mutableStateOf("") }
     var editingMission by remember { mutableStateOf<Mission?>(null) }
 
-    LazyColumn {
-        items(missionList) { mission ->
-            MissionItemWithSwitch(
-                mission = mission,
-                onMissionCompletionChange = { updatedMission, isChecked ->
-                    coroutineScope.launch(Dispatchers.IO) {
-                        missionDao.updateMission(updatedMission.copy(isCompleted = isChecked))
-                    }
-                }
-            )
-        }
+    Column {
+        // Add spacer
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = "Time Until Reset: ${formatTime(timeUntilReset)}", color = Color.White) // Display countdown
+        // Display the progress bar
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.padding(16.dp),
+        )
+        LazyColumn {
+            items(missionList) { mission ->
+                MissionItemWithSwitch(
+                    mission = mission,
+                    onMissionCompletionChange = { updatedMission, isChecked, _ ->
+                        coroutineScope.launch(Dispatchers.IO) {
+                            missionDao.updateMission(updatedMission.copy(isCompleted = isChecked))
+                        }
+                    },
+                    onTotalXPChange = onTotalXPChange
+                )
+            }
 
-        item {
-            Button(
-                onClick = { showDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text("Add New Mission")
+            item {
+                Button(
+                    onClick = { showDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text("Add New Mission")
+                }
             }
         }
     }
-
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -209,6 +244,35 @@ fun MissionListWithSwitches(missions: List<Mission>) {
     }
 }
 
+// Calculate time until next midnight
+fun getTimeUntilNextReset(): Long {
+    val now = Calendar.getInstance()
+    val midnight = Calendar.getInstance().apply {
+        timeInMillis = now.timeInMillis
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+        if (before(now)) {
+            add(Calendar.DAY_OF_YEAR, 1)
+        }
+    }
+    return midnight.timeInMillis - now.timeInMillis
+}
+
+// Format time for display
+fun formatTime(timeInMillis: Long): String {
+    val hours = TimeUnit.MILLISECONDS.toHours(timeInMillis)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(timeInMillis) % 60
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(timeInMillis) % 60
+    return String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
+}
+
+// Add resetMissions function to MissionDao
+fun MissionDao.resetMissions() {
+    updateMissionCompletionStatus(false)
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewMissionList() {
@@ -217,5 +281,5 @@ fun PreviewMissionList() {
         Mission(title = "Limit Eating Out", description = "Try not to eat out more than once today.", xpReward = 10, isCompleted = false),
         Mission(title = "Track Spending", description = "Record every expense you make today.", xpReward = 8, isCompleted = false)
     )
-    MissionListWithSwitches(missions = sampleMissions)
+    MissionListWithSwitches(missions = sampleMissions) {}
 }
