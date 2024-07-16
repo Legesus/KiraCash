@@ -14,6 +14,11 @@ interface PaidItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(paidItems: List<PaidItem>)
 
+    @Insert
+    fun insertPaidItem(paidItem: PaidItem)
+
+    @Query("SELECT * FROM paid_items WHERE datePaid = :date")
+    fun getPaidItemsByDate(date: String): Flow<List<PaidItem>>
 
     @Query("SELECT * FROM paid_items")
     fun getAllPaidItems(): Flow<List<PaidItem>>

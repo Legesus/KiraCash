@@ -119,4 +119,7 @@ dependencies {
     implementation("io.github.vanpra.compose-material-dialogs:color:0.9.0")
     implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
 
+    // MPAndroidChart
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 }

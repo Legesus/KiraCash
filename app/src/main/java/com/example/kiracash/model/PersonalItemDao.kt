@@ -23,4 +23,20 @@ interface PersonalItemDao {
 
     @Query("SELECT * FROM personal_items")
     fun getAllPersonalItems(): Flow<List<PersonalItem>>
+
+    @Insert
+    fun insertPersonalItem(personalItem: PersonalItem)
+
+    @Query("SELECT * FROM personal_items WHERE dateExpense = :date")
+    fun getPersonalItemsByDate(date: String): Flow<List<PersonalItem>>
+
+    @Query("""
+    SELECT 
+        strftime('%Y-%m', dateExpense) as month, 
+        category,
+        SUM(price) as total 
+    FROM personal_items 
+    GROUP BY month, category
+    """)
+    fun getMonthlyCategoryExpenses(): Flow<List<MonthlyCategoryExpense>>
 }

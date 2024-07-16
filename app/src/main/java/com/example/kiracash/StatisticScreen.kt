@@ -2,6 +2,7 @@ package com.example.kiracash
 
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -10,9 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -36,17 +40,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
-import com.example.kiracash.model.PersonalItem
+import com.example.kiracash.model.MonthlyCategoryExpense
 import com.example.kiracash.model.Wallet
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.tehras.charts.piechart.PieChart
 import com.github.tehras.charts.piechart.PieChartData
 import com.github.tehras.charts.piechart.animation.simpleChartAnimation
 import com.github.tehras.charts.piechart.renderer.SimpleSliceDrawer
 import kotlinx.coroutines.flow.first
-import java.util.Locale
 
 class StatisticScreen : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,8 +85,6 @@ fun StatisticScreen(navController: NavHostController) {
     val personalItemDao = AppDatabase.getDatabase(context).personalItemDao()
     Log.d("StatisticScreen", "Got personalItemDao: $personalItemDao")
 
-
-    // Collect paid items
     val paidItemsFlow = paidItemDao.getAllPaidItems().collectAsState(initial = emptyList())
 
     var wallets by remember { mutableStateOf(emptyList<Wallet>()) }
@@ -88,23 +96,17 @@ fun StatisticScreen(navController: NavHostController) {
     var showAmountOwe by remember { mutableStateOf(false) }
     Log.d("StatisticScreen", "Initialized showAmountOwe state")
 
-    // State for personal expenses
-    var personalExpenses by remember { mutableStateOf(emptyList<PersonalItem>()) }
-    var totalPersonalExpenses by remember { mutableStateOf(0.0) }
-
+    var personalExpenses by remember { mutableStateOf(emptyList<MonthlyCategoryExpense>()) }
+    Log.d("StatisticScreen", "Initialized personalExpenses state")
 
     LaunchedEffect(showAmountOwe, paidItemsFlow.value) {
-
         Log.d("StatisticScreen", "LaunchedEffect started")
 
         try {
             // Fetch personal expenses
             Log.d("StatisticScreen", "Fetching personal expenses")
-            val myselfWalletId = walletDao.getWalletIdByOwner("Myself").first()
-            personalExpenses = personalItemDao.getPersonalItemsByWalletId(myselfWalletId).first()
-            totalPersonalExpenses = personalExpenses.sumOf { it.price }
+            personalExpenses = personalItemDao.getMonthlyCategoryExpenses().first()
             Log.d("StatisticScreen", "Fetched Personal Expenses: $personalExpenses")
-            Log.d("StatisticScreen", "Total Personal Expenses: $totalPersonalExpenses")
         } catch (e: Exception) {
             Log.e("StatisticScreen", "Error fetching personal expenses", e)
         }
@@ -112,23 +114,22 @@ fun StatisticScreen(navController: NavHostController) {
         if (showAmountOwe) {
             walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
                 wallets = walletList
-                totalAmount = walletList.sumOf { it.amountOwe }
+                totalAmount = walletList.sumOf { wallet -> wallet.amountOwe }
                 Log.d("StatisticScreen", "Total Amount Owe: $totalAmount")
-                walletList.forEach {
-                    Log.d("StatisticScreen", "Wallet: ${it.owner}, Amount Owe: ${it.amountOwe}")
+                walletList.forEach { wallet ->
+                    Log.d("StatisticScreen", "Wallet: ${wallet.owner}, Amount Owe: ${wallet.amountOwe}")
                 }
             }
         } else {
             walletDao.getWalletsWithTotalAmountPaid().collect { walletList ->
-                // Map wallets to include the sum of paid items
                 wallets = walletList.map { wallet ->
-                    val paidItems = paidItemsFlow.value.filter { it.walletId == wallet.id && it.isPaid }
-                    wallet.copy(amountPaid = paidItems.sumOf { it.price })
+                    val paidItems = paidItemsFlow.value.filter { paidItem -> paidItem.walletId == wallet.id && paidItem.isPaid }
+                    wallet.copy(amountPaid = paidItems.sumOf { paidItem -> paidItem.price })
                 }
-                totalAmount = wallets.sumOf { it.amountPaid }
+                totalAmount = wallets.sumOf { wallet -> wallet.amountPaid }
                 Log.d("StatisticScreen", "Total Amount Paid: $totalAmount")
-                wallets.forEach {
-                    Log.d("StatisticScreen", "Wallet: ${it.owner}, Amount Paid: ${it.amountPaid}")
+                wallets.forEach { wallet ->
+                    Log.d("StatisticScreen", "Wallet: ${wallet.owner}, Amount Paid: ${wallet.amountPaid}")
                 }
             }
         }
@@ -166,7 +167,8 @@ fun StatisticScreen(navController: NavHostController) {
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .background(Color(0xFF1C1B24)),
+                .background(Color(0xFF1C1B24))
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Toggle Button
@@ -220,7 +222,7 @@ fun StatisticScreen(navController: NavHostController) {
                 }
             }
 
-            // Personal Expenses Section
+            // Personal Expenses Section with Bar Chart
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = "Personal Expenses",
@@ -229,24 +231,207 @@ fun StatisticScreen(navController: NavHostController) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = "Total: RM${String.format(Locale.US, "%.2f", totalPersonalExpenses)}",
-                color = Color.White,
-                fontSize = 18.sp
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            personalExpenses.forEach { item ->
-                Text(
-                    text = "${item.name} - RM${String.format(Locale.US, "%.2f", item.price)} (${item.category})",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Start
-                )
-            }
 
+
+            MonthlyCategoryBarChartView(personalExpenses)
         }
     }
 }
+
+@Composable
+fun WalletBarChartView(wallets: List<Wallet>, showAmountOwe: Boolean) {
+    AndroidView(factory = { context ->
+        BarChart(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+            description.isEnabled = false
+            setPinchZoom(false)
+            setDrawBarShadow(false)
+            setDrawGridBackground(false)
+
+            val walletNames = wallets.map { it.owner }
+            val amounts = wallets.map { if (showAmountOwe) it.amountOwe.toFloat() else it.amountPaid.toFloat() }
+
+            val entries = amounts.mapIndexed { index, amount ->
+                BarEntry(index.toFloat(), amount)
+            }
+
+            val dataSet = BarDataSet(entries, "Wallets").apply {
+                colors = List(wallets.size) { index -> wallets[index].walletColor.toInt() }
+                valueTextColor = android.graphics.Color.WHITE
+                valueTextSize = 12f
+            }
+
+            val barData = BarData(dataSet)
+            data = barData
+
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                setDrawGridLines(false)
+                valueFormatter = IndexAxisValueFormatter(walletNames)
+                granularity = 1f
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+            }
+
+            axisLeft.apply {
+                setDrawGridLines(false)
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+            }
+
+            axisRight.isEnabled = false
+
+            legend.apply {
+                isEnabled = true
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+            }
+
+            invalidate()
+        }
+    }, update = { view ->
+        (view as BarChart).apply {
+            val walletNames = wallets.map { it.owner }
+            val amounts = wallets.map { if (showAmountOwe) it.amountOwe.toFloat() else it.amountPaid.toFloat() }
+
+            val entries = amounts.mapIndexed { index, amount ->
+                BarEntry(index.toFloat(), amount)
+            }
+
+            val dataSet = BarDataSet(entries, "Wallets").apply {
+                colors = List(wallets.size) { index -> wallets[index].walletColor.toInt() }
+                valueTextColor = android.graphics.Color.WHITE
+                valueTextSize = 12f
+            }
+
+            val barData = BarData(dataSet)
+            data = barData
+
+            xAxis.valueFormatter = IndexAxisValueFormatter(walletNames)
+            invalidate()
+        }
+    },
+    modifier = Modifier
+        .fillMaxWidth()
+        .height(400.dp) // Adjust height as needed
+    )
+}
+
+@Composable
+fun MonthlyCategoryBarChartView(monthlyCategoryExpenses: List<MonthlyCategoryExpense>) {
+    AndroidView(factory = { context ->
+        BarChart(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+            description.isEnabled = false
+            setPinchZoom(false)
+            setDrawBarShadow(false)
+            setDrawGridBackground(false)
+
+            val months = monthlyCategoryExpenses.map { it.month }.distinct()
+            val categories = monthlyCategoryExpenses.map { it.category }.distinct()
+
+            val categoryColors = mapOf(
+                "Food & Drink" to android.graphics.Color.RED,
+                "Entertainment" to android.graphics.Color.BLUE,
+                "Health & Fitness" to android.graphics.Color.YELLOW
+            )
+
+            val entries = categories.map { category ->
+                BarDataSet(
+                    months.mapIndexed { index, month ->
+                        val total = monthlyCategoryExpenses
+                            .filter { it.month == month && it.category == category }
+                            .sumOf { it.total }
+                        BarEntry(index.toFloat(), total.toFloat())
+                    }, category
+                ).apply {
+                    color = categoryColors[category] ?: android.graphics.Color.GRAY
+                    valueTextColor = android.graphics.Color.WHITE
+                    valueTextSize = 12f
+                }
+            }
+
+            val barData = BarData(entries)
+            data = barData
+
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                setDrawGridLines(false)
+                valueFormatter = IndexAxisValueFormatter(months)
+                granularity = 1f
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+            }
+
+            axisLeft.apply {
+                setDrawGridLines(false)
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+            }
+
+            axisRight.isEnabled = false
+
+            legend.apply {
+                isEnabled = true
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+            }
+
+            invalidate()
+        }
+    }, update = { view ->
+        (view as BarChart).apply {
+            val months = monthlyCategoryExpenses.map { it.month }.distinct()
+            val categories = monthlyCategoryExpenses.map { it.category }.distinct()
+
+            val categoryColors = mapOf(
+                "Food & Drink" to android.graphics.Color.RED,
+                "Entertainment" to android.graphics.Color.BLUE,
+                "Health & Fitness" to android.graphics.Color.YELLOW
+            )
+
+            val entries = categories.map { category ->
+                BarDataSet(
+                    months.mapIndexed { index, month ->
+                        val total = monthlyCategoryExpenses
+                            .filter { it.month == month && it.category == category }
+                            .sumOf { it.total }
+                        BarEntry(index.toFloat(), total.toFloat())
+                    }, category
+                ).apply {
+                    color = categoryColors[category] ?: android.graphics.Color.GRAY
+                    valueTextColor = android.graphics.Color.WHITE
+                    valueTextSize = 12f
+                }
+            }
+
+            val barData = BarData(entries)
+            data = barData
+
+            xAxis.apply {
+                valueFormatter = IndexAxisValueFormatter(months)
+                granularity = 1f
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+            }
+
+            invalidate()
+        }
+    },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(400.dp) // Increased height
+    )
+}
+
 
 @Preview(showBackground = true)
 @Composable
@@ -254,3 +439,4 @@ fun StatisticScreenPreview() {
     val mockNavController = rememberNavController()
     StatisticScreen(navController = mockNavController)
 }
+

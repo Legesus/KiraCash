@@ -20,5 +20,12 @@ data class PersonalItem(
     val name: String,
     val price: Double,
     val category: String, // Add category
-    val walletId: Int // Add walletId
+    val walletId: Int, // Add walletId
+    val dateExpense: String // Add this line
+)
+
+data class MonthlyCategoryExpense(
+    val month: String,
+    val category: String,
+    val total: Double
 )

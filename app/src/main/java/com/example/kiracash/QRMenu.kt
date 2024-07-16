@@ -72,6 +72,7 @@ import com.example.kiracash.model.WalletItemJoin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 class OCRActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -509,7 +510,10 @@ fun OCRScreen(navController: NavHostController) {
                                     val receiptJoin = ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
                                     receiptItemJoinDao.insert(receiptJoin)
 
-                                    val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = wallet?.id ?: 0)
+                                    // Use LocalDate.now() to get the current date in "YYYY-MM-DD" format
+                                    val currentDate = LocalDate.now().toString()
+
+                                    val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = wallet?.id ?: 0, datePaid = currentDate)
                                     paidItemDao.insert(paidItem)
                                 }
                             }

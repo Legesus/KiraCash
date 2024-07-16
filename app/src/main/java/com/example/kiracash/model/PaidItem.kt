@@ -10,5 +10,6 @@ data class PaidItem(
     val price: Double,
     val isPaid: Boolean,
     val isSettled: Boolean = false, // Add this line
-    val walletId: Int
+    val walletId: Int,
+    val datePaid: String // Add this line
 )

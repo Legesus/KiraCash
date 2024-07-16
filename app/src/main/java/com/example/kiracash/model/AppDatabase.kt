@@ -88,6 +88,9 @@ abstract class AppDatabase : RoomDatabase() {
                 // Retrieve the inserted wallets to get their IDs
                 val insertedWallets = walletDao.getAllWallets().first()
 
+                // Define initial dates for the items
+                val initialDates = listOf("2023-01-15", "2023-02-15", "2023-03-15")
+
                 // Create Item objects
                 val items = listOf(
                     Item(name = "L3 12 LAKSA MEDIUM", price = 12.00),
@@ -105,12 +108,12 @@ abstract class AppDatabase : RoomDatabase() {
                 // Insert items into the database
                 itemDao.insertAll(items)
 
-                // Create PaidItem objects with half isPaid=true and half isPaid=false
+                // Create PaidItem objects with dates
                 val paidItems = items.mapIndexed { index, item ->
                     val isPaid = index < items.size / 2
                     val walletId = insertedWallets[index % insertedWallets.size].id
-                    val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = walletId)
-                    paidItem
+                    val datePaid = initialDates[index % initialDates.size] // Cycle through the initialDates list
+                    PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = walletId, datePaid = datePaid)
                 }
 
                 // Insert paid items into the database
@@ -144,13 +147,15 @@ abstract class AppDatabase : RoomDatabase() {
                 // Assuming "Myself" wallet is already created as shown in the existing populateDatabase method
                 val myselfWalletId = walletDao.getWalletIdByOwner("Myself").firstOrNull() ?: return
 
-                val initialPersonalExpenses = listOf(
-                    PersonalItem(name = "Coffee", price = 5.0, category = "Food & Drink", walletId = myselfWalletId),
-                    PersonalItem(name = "Netflix Subscription", price = 9.99, category = "Entertainment", walletId = myselfWalletId),
-                    PersonalItem(name = "Gym Membership", price = 25.0, category = "Health & Fitness", walletId = myselfWalletId)
+                // Create PersonalItem objects with dates
+                val personalItems = listOf(
+                    PersonalItem(name = "Coffee", price = 5.0, category = "Food & Drink", walletId = myselfWalletId, dateExpense = "2023-01-20"),
+                    PersonalItem(name = "Netflix Subscription", price = 9.99, category = "Entertainment", walletId = myselfWalletId, dateExpense = "2023-02-20"),
+                    PersonalItem(name = "Gym Membership", price = 25.0, category = "Health & Fitness", walletId = myselfWalletId, dateExpense = "2023-03-20")
                 )
 
-                personalItemDao.insertAll(initialPersonalExpenses)
+                // Insert personal items into the database
+                personalItemDao.insertAll(personalItems)
             }
         }
     }
