@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +43,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.MonthlyCategoryExpense
+import com.example.kiracash.model.PaidItem
 import com.example.kiracash.model.Wallet
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
@@ -52,10 +51,7 @@ import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.github.tehras.charts.piechart.PieChart
 import com.github.tehras.charts.piechart.PieChartData
-import com.github.tehras.charts.piechart.animation.simpleChartAnimation
-import com.github.tehras.charts.piechart.renderer.SimpleSliceDrawer
 import kotlinx.coroutines.flow.first
 
 class StatisticScreen : ComponentActivity() {
@@ -171,6 +167,28 @@ fun StatisticScreen(navController: NavHostController) {
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Personal Expenses Section with Bar Chart
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "Personal Expenses",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+
+            MonthlyCategoryBarChartView(personalExpenses)
+
+            // Title and Chart
+            Text(
+                text = "Debt Tracker",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 20.dp)
+            )
+
             // Toggle Button
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -184,62 +202,16 @@ fun StatisticScreen(navController: NavHostController) {
                 )
                 Text(" You owe them")
             }
-
-            // Title and Chart
-            Text(
-                text = "Statistic",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 20.dp)
-            )
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Pie chart implementation
-            val sliceThickness = 100f
+            MonthlyWalletBarChartView(wallets = wallets, showAmountOwe = showAmountOwe, paidItems = paidItemsFlow.value)
 
-            PieChart(
-                pieChartData = PieChartData(slices),
-                modifier = Modifier.size(200.dp),
-                animation = simpleChartAnimation(),
-                sliceDrawer = SimpleSliceDrawer(sliceThickness)
-            )
-
-            // Item List
-            Spacer(modifier = Modifier.height(20.dp))
-            Column(
-                modifier = Modifier.padding(horizontal = 20.dp)
-            ) {
-                wallets.forEach { wallet ->
-                    val colorHex = "#" + Integer.toHexString(wallet.walletColor).padStart(6, '0')
-                    Text(
-                        text = "${wallet.owner}: RM${if (showAmountOwe) wallet.amountOwe else wallet.amountPaid}",
-                        color = Color(android.graphics.Color.parseColor(colorHex)),
-                        fontSize = 18.sp,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-            }
-
-            // Personal Expenses Section with Bar Chart
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = "Personal Expenses",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-
-            MonthlyCategoryBarChartView(personalExpenses)
         }
     }
 }
 
 @Composable
-fun WalletBarChartView(wallets: List<Wallet>, showAmountOwe: Boolean) {
+fun MonthlyWalletBarChartView(wallets: List<Wallet>, showAmountOwe: Boolean, paidItems: List<PaidItem>) {
     AndroidView(factory = { context ->
         BarChart(context).apply {
             layoutParams = ViewGroup.LayoutParams(
@@ -252,26 +224,31 @@ fun WalletBarChartView(wallets: List<Wallet>, showAmountOwe: Boolean) {
             setDrawBarShadow(false)
             setDrawGridBackground(false)
 
+            val months = paidItems.map { it.datePaid.substring(0, 7) }.distinct()
             val walletNames = wallets.map { it.owner }
-            val amounts = wallets.map { if (showAmountOwe) it.amountOwe.toFloat() else it.amountPaid.toFloat() }
 
-            val entries = amounts.mapIndexed { index, amount ->
-                BarEntry(index.toFloat(), amount)
+            val entries = walletNames.map { walletName ->
+                val wallet = wallets.first { it.owner == walletName }
+                val walletEntries = months.mapIndexed { index, month ->
+                    val total = paidItems
+                        .filter { it.datePaid.startsWith(month) && it.walletId == wallet.id && it.isPaid == !showAmountOwe }
+                        .sumOf { it.price }
+                    BarEntry(index.toFloat(), total.toFloat())
+                }
+                BarDataSet(walletEntries, walletName).apply {
+                    color = android.graphics.Color.parseColor(String.format("#%06X", 0xFFFFFF and wallet.walletColor.toInt()))
+                    valueTextColor = android.graphics.Color.WHITE
+                    valueTextSize = 12f
+                }
             }
 
-            val dataSet = BarDataSet(entries, "Wallets").apply {
-                colors = List(wallets.size) { index -> wallets[index].walletColor.toInt() }
-                valueTextColor = android.graphics.Color.WHITE
-                valueTextSize = 12f
-            }
-
-            val barData = BarData(dataSet)
+            val barData = BarData(entries)
             data = barData
 
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 setDrawGridLines(false)
-                valueFormatter = IndexAxisValueFormatter(walletNames)
+                valueFormatter = IndexAxisValueFormatter(months)
                 granularity = 1f
                 textColor = android.graphics.Color.WHITE
                 textSize = 12f
@@ -295,31 +272,37 @@ fun WalletBarChartView(wallets: List<Wallet>, showAmountOwe: Boolean) {
         }
     }, update = { view ->
         (view as BarChart).apply {
+            val months = paidItems.map { it.datePaid.substring(0, 7) }.distinct()
             val walletNames = wallets.map { it.owner }
-            val amounts = wallets.map { if (showAmountOwe) it.amountOwe.toFloat() else it.amountPaid.toFloat() }
 
-            val entries = amounts.mapIndexed { index, amount ->
-                BarEntry(index.toFloat(), amount)
+            val entries = walletNames.map { walletName ->
+                val wallet = wallets.first { it.owner == walletName }
+                val walletEntries = months.mapIndexed { index, month ->
+                    val total = paidItems
+                        .filter { it.datePaid.startsWith(month) && it.walletId == wallet.id && it.isPaid == !showAmountOwe }
+                        .sumOf { it.price }
+                    BarEntry(index.toFloat(), total.toFloat())
+                }
+                BarDataSet(walletEntries, walletName).apply {
+                    color = android.graphics.Color.parseColor(String.format("#%06X", 0xFFFFFF and wallet.walletColor.toInt()))
+                    valueTextColor = android.graphics.Color.WHITE
+                    valueTextSize = 12f
+                }
             }
 
-            val dataSet = BarDataSet(entries, "Wallets").apply {
-                colors = List(wallets.size) { index -> wallets[index].walletColor.toInt() }
-                valueTextColor = android.graphics.Color.WHITE
-                valueTextSize = 12f
-            }
-
-            val barData = BarData(dataSet)
+            val barData = BarData(entries)
             data = barData
 
-            xAxis.valueFormatter = IndexAxisValueFormatter(walletNames)
+            xAxis.valueFormatter = IndexAxisValueFormatter(months)
             invalidate()
         }
     },
-    modifier = Modifier
-        .fillMaxWidth()
-        .height(400.dp) // Adjust height as needed
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(400.dp) // Adjust height as needed
     )
 }
+
 
 @Composable
 fun MonthlyCategoryBarChartView(monthlyCategoryExpenses: List<MonthlyCategoryExpense>) {
