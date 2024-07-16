@@ -1,14 +1,9 @@
 package com.example.kiracash
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +54,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -72,7 +66,6 @@ import com.example.kiracash.model.Wallet
 import com.example.kiracash.model.WalletItemJoin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -386,57 +379,6 @@ fun OCRScreen(navController: NavHostController) {
         }
     }
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview(),
-        onResult = { imageBitmap ->
-            if (imageBitmap != null) {
-                scope.launch(Dispatchers.IO) {
-                    showLoading.value = true
-                    val processedItems = imageProcessor.processImage(imageBitmap)
-                    jsonString.value = imageProcessor.getJsonString()
-                    withContext(Dispatchers.Main) {
-                        showDialog.value = true
-                        showLoading.value = false
-                    }
-                }
-            }
-        }
-    )
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri ->
-            if (uri != null) {
-                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-                scope.launch(Dispatchers.IO) {
-                    showLoading.value = true
-                    val processedItems = imageProcessor.processImage(bitmap)
-                    jsonString.value = imageProcessor.getJsonString()
-                    withContext(Dispatchers.Main) {
-                        showDialog.value = true
-                        showLoading.value = false
-                    }
-                }
-            }
-        }
-    )
-
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            launcher.launch(null)
-        } else {
-            // Handle permission denial (not implemented here)
-        }
-    }
-
-    val hasCameraPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.CAMERA
-    ) == PackageManager.PERMISSION_GRANTED
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -525,37 +467,6 @@ fun OCRScreen(navController: NavHostController) {
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(
-                        onClick = {
-                            if (hasCameraPermission) {
-                                launcher.launch(null)
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.CAMERA)
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
-                        modifier = Modifier.weight(1f).padding(end = 8.dp)
-                    ) {
-                        Text("Scan", color = Color.White)
-                    }
-
-                    Button(
-                        onClick = {
-                            galleryLauncher.launch("image/*")
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
-                        modifier = Modifier.weight(1f).padding(start = 8.dp)
-                    ) {
-                        Text("Upload", color = Color.White)
-                    }
-                }
             }
 
             Text(
