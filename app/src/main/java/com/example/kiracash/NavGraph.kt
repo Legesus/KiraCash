@@ -3,6 +3,9 @@ package com.example.kiracash
 import EditWalletUI
 import ProfileScreen
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -20,6 +23,14 @@ object MainDestinations {
 @Composable
 fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
     val navController = rememberNavController()
+    val sharedViewModel: SharedViewModel = viewModel() // Create the SharedViewModel here
+
+    // Create ImageProcessor within a Composable function
+    val context = LocalContext.current
+    val imageProcessor = remember(context) {
+        ImageProcessor(context)
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -48,8 +59,9 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
     }
 
     ExtendedButton(
-        onScanClick = { navController.navigate(MainDestinations.QR_MENU_ROUTE) },
-        onUploadClick = { /* Navigate to your upload screen */ },
+        sharedViewModel = sharedViewModel, // Pass ViewModel
+        imageProcessor = imageProcessor,
+        navController = navController,
         onSaveToGoalsClick = { /* Navigate to your goal screen */ }
     )
 }

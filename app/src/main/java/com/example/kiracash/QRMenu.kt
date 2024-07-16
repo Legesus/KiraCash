@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
@@ -72,7 +73,9 @@ import com.example.kiracash.model.WalletItemJoin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class OCRActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -328,7 +331,7 @@ fun ReceiptHistory(
             .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = "Receipt History",
+            text = "Transaction History",
             color = Color.White,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
@@ -361,6 +364,7 @@ fun ReceiptHistory(
 fun OCRScreen(navController: NavHostController) {
     val context = LocalContext.current
     val imageProcessor = remember { ImageProcessor(context) }
+    val sharedViewModel: SharedViewModel = viewModel()
     val jsonString = remember { mutableStateOf("") }
     val showDialog = remember { mutableStateOf(false) }
     val showLoading = remember { mutableStateOf(false) }
@@ -438,7 +442,7 @@ fun OCRScreen(navController: NavHostController) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Receipt Menu",
+                        text = "Transaction Menu",
                         color = Color.White,
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold
@@ -478,7 +482,7 @@ fun OCRScreen(navController: NavHostController) {
                     LoadingDialog()
                 }
 
-                if (showDialog.value) {
+                if (sharedViewModel.showReceiptDialog.value) {
                     val items = imageProcessor.itemsState.value
                     val wallets = walletsState
 
@@ -487,8 +491,8 @@ fun OCRScreen(navController: NavHostController) {
                         items = items,
                         wallets = wallets,
                         onDismiss = {
-                            imageProcessor.itemsState.value = emptyList()
-                            showDialog.value = false
+                            sharedViewModel.extractedItems.value = emptyList()
+                            sharedViewModel.showReceiptDialog.value = false
                         },
                         onFinalize = { selectedWalletsAndPaidStatus ->
                             scope.launch(Dispatchers.IO) {
@@ -510,8 +514,7 @@ fun OCRScreen(navController: NavHostController) {
                                     val receiptJoin = ReceiptItemJoin(receiptId = receiptId.toInt(), itemId = item.id)
                                     receiptItemJoinDao.insert(receiptJoin)
 
-                                    // Use LocalDate.now() to get the current date in "YYYY-MM-DD" format
-                                    val currentDate = LocalDate.now().toString()
+                                    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
                                     val paidItem = PaidItem(name = item.name, price = item.price, isPaid = isPaid, walletId = wallet?.id ?: 0, datePaid = currentDate)
                                     paidItemDao.insert(paidItem)

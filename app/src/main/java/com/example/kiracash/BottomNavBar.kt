@@ -39,8 +39,8 @@ val items = listOf(
     BottomNav("Home", Icons.Rounded.Home, MainDestinations.HOME_ROUTE),
     BottomNav("Budget", Icons.Rounded.AttachMoney, MainDestinations.BUDGET_ROUTE),
     BottomNav("Wallet", Icons.Rounded.Wallet, MainDestinations.DEBT_MENU_ROUTE),
-    BottomNav("Receipt", Icons.Rounded.QrCode, MainDestinations.QR_MENU_ROUTE),
-    BottomNav("Statistic", Icons.Rounded.BarChart, MainDestinations.STATISTIC_SCREEN_ROUTE),
+    BottomNav("Transxn", Icons.Rounded.QrCode, MainDestinations.QR_MENU_ROUTE),
+    BottomNav("Stats", Icons.Rounded.BarChart, MainDestinations.STATISTIC_SCREEN_ROUTE),
     BottomNav("Account", Icons.Rounded.AccountCircle, MainDestinations.ACCOUNT_ROUTE)
 )
 
