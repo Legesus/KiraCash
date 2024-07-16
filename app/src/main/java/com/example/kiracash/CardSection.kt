@@ -151,6 +151,7 @@ fun CardSection() {
     val db = AppDatabase.getDatabase(context)
     val walletDao = db.walletDao()
     val paidItemDao = db.paidItemDao()
+    val personalItemDao = db.personalItemDao()
     val coroutineScope = rememberCoroutineScope()
 
     var budget by remember { mutableStateOf(Budget(0f, 0f, 0f, 0f, 0f)) }
@@ -159,11 +160,16 @@ fun CardSection() {
     LaunchedEffect(Unit) {
         coroutineScope.launch(Dispatchers.IO) {
             val paidItems = paidItemDao.getAllPaidItems().first()
+            val personalExpenses = personalItemDao.getAllPersonalItems().first()
             val myselfWallet = walletDao.getWalletByOwner("Myself").first()
             val otherWallets = walletDao.getAllWallets().first().filter { it.owner != "Myself" }
 
             val income = paidItems.filter { it.walletId == myselfWallet.id && it.isPaid }.sumOf { it.price }.toFloat()
-            val expenses = paidItems.filter { it.walletId == myselfWallet.id && !it.isPaid }.sumOf { it.price }.toFloat()
+
+            // Calculate expenses from paid items and personal expenses
+            val expensesFromPaidItems = paidItems.filter { it.walletId == myselfWallet.id && !it.isPaid }.sumOf { it.price }.toFloat()
+            val totalPersonalExpenses = personalExpenses.sumOf { it.price }.toFloat()
+            val expenses = expensesFromPaidItems + totalPersonalExpenses
 
             val oweYouOtherWallets = otherWallets.sumOf { wallet ->
                 paidItems.filter { it.walletId == wallet.id && it.isPaid }.sumOf { it.price }

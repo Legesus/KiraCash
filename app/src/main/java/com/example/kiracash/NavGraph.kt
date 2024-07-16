@@ -48,8 +48,8 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
     }
 
     ExtendedButton(
-        onScanClick = { /* Handle scan click */ },
-        onUploadClick = { /* Handle upload click */ },
-        onSaveToGoalsClick = { /* Handle save to goals click */ }
+        onScanClick = { navController.navigate(MainDestinations.QR_MENU_ROUTE) },
+        onUploadClick = { /* Navigate to your upload screen */ },
+        onSaveToGoalsClick = { /* Navigate to your goal screen */ }
     )
 }

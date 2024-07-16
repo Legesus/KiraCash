@@ -8,9 +8,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
-@Database(entities = [Receipt::class, Item::class, Wallet::class, WalletItemJoin::class, ReceiptItemJoin::class, PaidItem::class, Mission::class], version = 2, exportSchema = false)
+@Database(entities = [Receipt::class, Item::class, Wallet::class, WalletItemJoin::class, ReceiptItemJoin::class, PaidItem::class, Mission::class, PersonalItem::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun receiptDao(): ReceiptDao
     abstract fun itemDao(): ItemDao
@@ -19,6 +20,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun receiptItemJoinDao(): ReceiptItemJoinDao
     abstract fun paidItemDao(): PaidItemDao
     abstract fun missionDao(): MissionDao
+    abstract fun personalItemDao(): PersonalItemDao // New DAO for Personal Items
 
     companion object {
         @Volatile
@@ -59,9 +61,18 @@ abstract class AppDatabase : RoomDatabase() {
                 val receiptItemJoinDao = db.receiptItemJoinDao()
                 val walletItemJoinDao = db.walletItemJoinDao()
                 val paidItemDao = db.paidItemDao()
+                val personalItemDao = db.personalItemDao() // Access the new DAO
+                val missionDao = db.missionDao()
 
                 // Delete all data in the database
                 db.clearAllTables()
+
+                val sampleMissions = listOf(
+                    Mission(title = "Save Daily", description = "Put aside at least 5% of your daily earnings.", xpReward = 15, isCompleted = false),
+                    Mission(title = "Limit Eating Out", description = "Try not to eat out more than once today.", xpReward = 10, isCompleted = false),
+                    Mission(title = "Track Spending", description = "Record every expense you make today.", xpReward = 8, isCompleted = false)
+                )
+                sampleMissions.forEach { missionDao.insertMission(it) }
 
                 // Create Wallet objects
                 val wallets = listOf(
@@ -129,8 +140,18 @@ abstract class AppDatabase : RoomDatabase() {
 
                 // Insert joins into the database
                 walletItemJoins.forEach { walletItemJoinDao.insert(it) }
+
+                // Assuming "Myself" wallet is already created as shown in the existing populateDatabase method
+                val myselfWalletId = walletDao.getWalletIdByOwner("Myself").firstOrNull() ?: return
+
+                val initialPersonalExpenses = listOf(
+                    PersonalItem(name = "Coffee", price = 5.0, category = "Food & Drink", walletId = myselfWalletId),
+                    PersonalItem(name = "Netflix Subscription", price = 9.99, category = "Entertainment", walletId = myselfWalletId),
+                    PersonalItem(name = "Gym Membership", price = 25.0, category = "Health & Fitness", walletId = myselfWalletId)
+                )
+
+                personalItemDao.insertAll(initialPersonalExpenses)
             }
         }
     }
 }
-

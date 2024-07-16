@@ -39,11 +39,14 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
+import com.example.kiracash.model.PersonalItem
 import com.example.kiracash.model.Wallet
 import com.github.tehras.charts.piechart.PieChart
 import com.github.tehras.charts.piechart.PieChartData
 import com.github.tehras.charts.piechart.animation.simpleChartAnimation
 import com.github.tehras.charts.piechart.renderer.SimpleSliceDrawer
+import kotlinx.coroutines.flow.first
+import java.util.Locale
 
 class StatisticScreen : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +72,10 @@ fun StatisticScreen(navController: NavHostController) {
     val paidItemDao = AppDatabase.getDatabase(context).paidItemDao()
     Log.d("StatisticScreen", "Got paidItemDao: $paidItemDao")
 
+    val personalItemDao = AppDatabase.getDatabase(context).personalItemDao()
+    Log.d("StatisticScreen", "Got personalItemDao: $personalItemDao")
+
+
     // Collect paid items
     val paidItemsFlow = paidItemDao.getAllPaidItems().collectAsState(initial = emptyList())
 
@@ -81,7 +88,27 @@ fun StatisticScreen(navController: NavHostController) {
     var showAmountOwe by remember { mutableStateOf(false) }
     Log.d("StatisticScreen", "Initialized showAmountOwe state")
 
+    // State for personal expenses
+    var personalExpenses by remember { mutableStateOf(emptyList<PersonalItem>()) }
+    var totalPersonalExpenses by remember { mutableStateOf(0.0) }
+
+
     LaunchedEffect(showAmountOwe, paidItemsFlow.value) {
+
+        Log.d("StatisticScreen", "LaunchedEffect started")
+
+        try {
+            // Fetch personal expenses
+            Log.d("StatisticScreen", "Fetching personal expenses")
+            val myselfWalletId = walletDao.getWalletIdByOwner("Myself").first()
+            personalExpenses = personalItemDao.getPersonalItemsByWalletId(myselfWalletId).first()
+            totalPersonalExpenses = personalExpenses.sumOf { it.price }
+            Log.d("StatisticScreen", "Fetched Personal Expenses: $personalExpenses")
+            Log.d("StatisticScreen", "Total Personal Expenses: $totalPersonalExpenses")
+        } catch (e: Exception) {
+            Log.e("StatisticScreen", "Error fetching personal expenses", e)
+        }
+
         if (showAmountOwe) {
             walletDao.getWalletsWithTotalAmountOwe().collect { walletList ->
                 wallets = walletList
@@ -192,6 +219,31 @@ fun StatisticScreen(navController: NavHostController) {
                     Spacer(modifier = Modifier.height(4.dp))
                 }
             }
+
+            // Personal Expenses Section
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "Personal Expenses",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Total: RM${String.format(Locale.US, "%.2f", totalPersonalExpenses)}",
+                color = Color.White,
+                fontSize = 18.sp
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            personalExpenses.forEach { item ->
+                Text(
+                    text = "${item.name} - RM${String.format(Locale.US, "%.2f", item.price)} (${item.category})",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Start
+                )
+            }
+
         }
     }
 }
