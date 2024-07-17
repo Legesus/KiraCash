@@ -61,7 +61,6 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
     ExtendedButton(
         sharedViewModel = sharedViewModel, // Pass ViewModel
         imageProcessor = imageProcessor,
-        navController = navController,
-        onSaveToGoalsClick = { sharedViewModel.showGoalDialog.value = true }
+        navController = navController
     )
 }

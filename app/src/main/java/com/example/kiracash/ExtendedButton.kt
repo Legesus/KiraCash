@@ -70,8 +70,7 @@ import java.util.Locale
 fun ExtendedButton(
     sharedViewModel: SharedViewModel,
     imageProcessor: ImageProcessor,
-    navController: NavHostController,
-    onSaveToGoalsClick: () -> Unit
+    navController: NavHostController
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -150,6 +149,9 @@ fun ExtendedButton(
         Manifest.permission.CAMERA
     ) == PackageManager.PERMISSION_GRANTED
 
+    // Add this line to control the visibility of UpdateGoalDialog
+    val showUpdateGoalDialog = remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -166,17 +168,13 @@ fun ExtendedButton(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = {
-                        sharedViewModel.showGoalDialog.value = true
-                        sharedViewModel.selectedGoal.value = null
-                        sharedViewModel.amountToSave.value = ""
-                    },
+                    onClick = { showUpdateGoalDialog.value = true },
                     modifier = Modifier.align(Alignment.End),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
                 ) {
                     Icon(Icons.Default.Upload, contentDescription = null, tint = Color.White)
                     Spacer(Modifier.width(8.dp))
-                    Text("Save to Goals", color = Color.White)
+                    Text("Update Goals", color = Color.White)
                 }
 
                 Button(
@@ -295,6 +293,14 @@ fun ExtendedButton(
                 sharedViewModel.selectedGoal.value = null
                 sharedViewModel.amountToSave.value = ""
             }
+        )
+    }
+
+    if (showUpdateGoalDialog.value) {
+        val db = AppDatabase.getDatabase(LocalContext.current)
+        UpdateGoalDialog(
+            db = db,
+            onDismiss = { showUpdateGoalDialog.value = false }
         )
     }
 }
