@@ -60,10 +60,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.Item
 import com.example.kiracash.model.PaidItem
+import com.example.kiracash.model.PersonalItem
 import com.example.kiracash.model.Receipt
 import com.example.kiracash.model.ReceiptItemJoin
 import com.example.kiracash.model.Wallet
 import com.example.kiracash.model.WalletItemJoin
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -371,6 +373,16 @@ fun OCRScreen(navController: NavHostController) {
     var walletsState by remember { mutableStateOf<List<Wallet>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
+    val showAddPersonalExpenseDialog = remember { mutableStateOf(false) }
+    val personalItemDao = AppDatabase.getDatabase(LocalContext.current).personalItemDao()
+    val onSaveExpense: (String, String, String) -> Unit = { name, price, category ->
+        val priceAsDouble = price.toDoubleOrNull() ?: 0.0 // Convert price to double, defaulting to 0.0 on failure
+        val newPersonalItem = PersonalItem(name = name, price = priceAsDouble, category = category, walletId = 0 /* Set appropriate wallet ID */, dateExpense = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()))
+        CoroutineScope(Dispatchers.IO).launch {
+            personalItemDao.insert(newPersonalItem)
+        }
+    }
+
     LaunchedEffect(Unit) {
         scope.launch {
             walletDao.getAllWallets().collect { wallets ->
@@ -467,6 +479,18 @@ fun OCRScreen(navController: NavHostController) {
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                if (showAddPersonalExpenseDialog.value) {
+                    AddPersonalExpenseDialog(
+                        showDialog = showAddPersonalExpenseDialog,
+                        onSave = onSaveExpense
+                    )
+                }
+
+                // Button or other UI element to show the dialog
+                Button(onClick = { showAddPersonalExpenseDialog.value = true }) {
+                    Text("Add Personal Expense")
+                }
             }
 
             Text(

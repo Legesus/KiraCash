@@ -62,6 +62,6 @@ fun NavGraph(startDestination: String = MainDestinations.HOME_ROUTE) {
         sharedViewModel = sharedViewModel, // Pass ViewModel
         imageProcessor = imageProcessor,
         navController = navController,
-        onSaveToGoalsClick = { /* Navigate to your goal screen */ }
+        onSaveToGoalsClick = { sharedViewModel.showGoalDialog.value = true }
     )
 }
