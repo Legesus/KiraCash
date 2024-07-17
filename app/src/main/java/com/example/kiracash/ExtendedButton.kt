@@ -152,6 +152,9 @@ fun ExtendedButton(
     // Add this line to control the visibility of UpdateGoalDialog
     val showUpdateGoalDialog = remember { mutableStateOf(false) }
 
+    // Add this line to control the visibility of SetPersonalExpenseDialog
+    val showSetPersonalExpenseDialog = remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -205,6 +208,16 @@ fun ExtendedButton(
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White)
                     Spacer(Modifier.width(8.dp))
                     Text("Scan Receipt", color = Color.White)
+                }
+
+                Button(
+                    onClick = { showSetPersonalExpenseDialog.value = true },
+                    modifier = Modifier.align(Alignment.End),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
+                ) {
+                    Icon(Icons.Default.Upload, contentDescription = null, tint = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Set Personal Expense", color = Color.White)
                 }
             }
         }
@@ -301,6 +314,14 @@ fun ExtendedButton(
         UpdateGoalDialog(
             db = db,
             onDismiss = { showUpdateGoalDialog.value = false }
+        )
+    }
+
+    if (showSetPersonalExpenseDialog.value) {
+        val db = AppDatabase.getDatabase(LocalContext.current)
+        SetPersonalExpenseDialog(
+            db = db,
+            onDismiss = { showSetPersonalExpenseDialog.value = false }
         )
     }
 }

@@ -30,6 +30,9 @@ interface PersonalItemDao {
     @Query("SELECT * FROM personal_items WHERE dateExpense = :date")
     fun getPersonalItemsByDate(date: String): Flow<List<PersonalItem>>
 
+    @Query("SELECT DISTINCT category FROM personal_items")
+    fun getCategories(): Flow<List<String>>
+
     @Query("""
     SELECT 
         strftime('%Y-%m', dateExpense) as month, 
