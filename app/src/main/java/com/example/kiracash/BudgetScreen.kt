@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,14 +49,30 @@ fun BudgetScreen(navController: NavHostController) {
     val db = AppDatabase.getDatabase(context)
     val missionDao = db.missionDao()
     val goalSetDao = db.goalSetDao()
+    val coroutineScope = rememberCoroutineScope()
 
     var selectedTab by remember { mutableStateOf(BudgetTabs.PixelPlant) }
 
     // Sample Missions data
     val initialMissions = listOf(
-        Mission(title = "Save Daily", description = "Put aside at least 5% of your daily earnings.", xpReward = 15, isCompleted = false),
-        Mission(title = "Limit Eating Out", description = "Try not to eat out more than once today.", xpReward = 10, isCompleted = false),
-        Mission(title = "Track Spending", description = "Record every expense you make today.", xpReward = 8, isCompleted = false)
+        Mission(
+            title = "Save Daily",
+            description = "Put aside at least 5% of your daily earnings.",
+            xpReward = 15,
+            isCompleted = false
+        ),
+        Mission(
+            title = "Limit Eating Out",
+            description = "Try not to eat out more than once today.",
+            xpReward = 10,
+            isCompleted = false
+        ),
+        Mission(
+            title = "Track Spending",
+            description = "Record every expense you make today.",
+            xpReward = 8,
+            isCompleted = false
+        )
     )
 
     // This is the correct place to collect goals from the database
@@ -131,16 +148,24 @@ fun BudgetScreen(navController: NavHostController) {
                         plantName = samplePlantName,
                         xpHistory = xpHistory
                     )
+
                 BudgetTabs.Missions ->
                     MissionListWithSwitches(missions = initialMissions) { xpChange ->
                         totalXP += xpChange
                     }
                 // Corrected GoalList call
                 BudgetTabs.Goals ->
-                    GoalList(goals = goalsList, onGoalUpdated = { goal ->
-                        // Implementation for updating a goal
+                    GoalList(goalSetDao, goals = goalsList, onGoalUpdated = { goal ->
+                        coroutineScope.launch {
+                            updateGoal(goalSetDao, goal, goal.amountSaved) { xpChange ->
+                                totalXP += xpChange
+                                xpHistory.add(XPEntry("Goal Reached/Unreached", xpChange))
+                            }
+                        }
                     }, onGoalDeleted = { goal ->
-                        // Implementation for deleting a goal
+                        coroutineScope.launch {
+                            goalSetDao.deleteGoal(goal)
+                        }
                     }, onXPChange = { xpChange ->
                         totalXP += xpChange
                         xpHistory.add(XPEntry("Goal Reached/Unreached", xpChange))
@@ -149,7 +174,6 @@ fun BudgetScreen(navController: NavHostController) {
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

@@ -69,9 +69,9 @@ abstract class AppDatabase : RoomDatabase() {
                 db.clearAllTables()
 
                 val sampleMissions = listOf(
-                    Mission(title = "Save Daily", description = "Put aside at least 5% of your daily earnings.", xpReward = 15, isCompleted = false),
-                    Mission(title = "Limit Eating Out", description = "Try not to eat out more than once today.", xpReward = 10, isCompleted = false),
-                    Mission(title = "Track Spending", description = "Record every expense you make today.", xpReward = 8, isCompleted = false)
+                    Mission(title = "Save Daily", description = "Spend at max RM 50 daily.", xpReward = 15, isCompleted = false),
+                    Mission(title = "Limit Eating Out", description = "Spend only twice for Food category.", xpReward = 10, isCompleted = false),
+                    Mission(title = "Receipt a Day", description = "Record a receipt today.", xpReward = 8, isCompleted = false)
                 )
                 sampleMissions.forEach { missionDao.insertMission(it) }
 

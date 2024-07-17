@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.kiracash.model.AppDatabase
 import com.example.kiracash.model.GoalSet
+import com.example.kiracash.model.GoalSetDao
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,9 +53,11 @@ fun GoalSetterScreen() {
         }
     }
 
-    GoalList(goals = goalsList, onGoalUpdated = { goal ->
+    GoalList(goalSetDao, goals = goalsList, onGoalUpdated = { goal ->
         coroutineScope.launch {
-            goalSetDao.updateGoal(goal)
+            updateGoal(goalSetDao, goal, goal.amountSaved) { xpChange ->
+                // Handle XP change, e.g., update a total XP state or call a function to update XP in the database
+            }
         }
     }, onGoalDeleted = { goal ->
         coroutineScope.launch {
@@ -66,18 +69,26 @@ fun GoalSetterScreen() {
 }
 
 @Composable
-// Adjusted GoalList with XP change handler
-fun GoalList(goals: List<GoalSet>, onGoalUpdated: (GoalSet) -> Unit, onGoalDeleted: (GoalSet) -> Unit, onXPChange: (Int) -> Unit) {
+fun GoalList(goalSetDao: GoalSetDao, goals: List<GoalSet>, onGoalUpdated: (GoalSet) -> Unit, onGoalDeleted: (GoalSet) -> Unit, onXPChange: (Int) -> Unit) {
     LazyColumn {
         items(goals) { goal ->
-            GoalItem(goal = goal, onEdit = onGoalUpdated, onDelete = onGoalDeleted, onXPChange = onXPChange)
+            GoalItem(goalSetDao, goal, onEdit = onGoalUpdated, onDelete = onGoalDeleted, onXPChange = onXPChange)
         }
     }
 }
 
 @Composable
-fun GoalItem(goal: GoalSet, onEdit: (GoalSet) -> Unit, onDelete: (GoalSet) -> Unit, onXPChange: (Int) -> Unit) {
+fun GoalItem(goalSetDao: GoalSetDao, goal: GoalSet, onEdit: (GoalSet) -> Unit, onDelete: (GoalSet) -> Unit, onXPChange: (Int) -> Unit) {
     val progress = (goal.amountSaved / goal.amountGoal).toFloat()
+    val xp = 100 // Set XP value for each goal
+
+    // Check if the goal is reached and it hasn't been marked as reached before
+    LaunchedEffect(goal.amountSaved, goal.isReached) {
+        if (goal.amountSaved >= goal.amountGoal && !goal.isReached) {
+            updateGoal(goalSetDao, goal, goal.amountSaved, onXPChange)
+        }
+    }
+
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -90,6 +101,7 @@ fun GoalItem(goal: GoalSet, onEdit: (GoalSet) -> Unit, onDelete: (GoalSet) -> Un
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = "Goal: RM ${goal.amountGoal}", maxLines = 1)
                 Text(text = "Saved: RM ${goal.amountSaved}", maxLines = 1)
+                Text(text = "XP: $xp", maxLines = 1) // Display XP value
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
                     progress = { progress },
@@ -107,11 +119,18 @@ fun GoalItem(goal: GoalSet, onEdit: (GoalSet) -> Unit, onDelete: (GoalSet) -> Un
                 }
             }
         }
+    }
+}
 
-        // Check if the goal is reached and call onXPChange with 100
-        if (goal.isReached && goal.amountSaved >= goal.amountGoal) {
-            onXPChange(100)
-        }
+suspend fun updateGoal(goalSetDao: GoalSetDao, goal: GoalSet, newAmountSaved: Double, onXPChange: (Int) -> Unit) {
+    // Update amountSaved
+    goal.amountSaved = newAmountSaved
+
+    // Check if the goal is reached and it hasn't been marked as reached before
+    if (goal.amountSaved >= goal.amountGoal && !goal.isReached) {
+        goal.isReached = true
+        goalSetDao.updateGoal(goal) // Update the goal in the database
+        onXPChange(100) // Add XP
     }
 }
 

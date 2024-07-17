@@ -117,18 +117,6 @@ fun PixelPlant(initialProgress: Double, plantName: String, xpHistory: List<XPEnt
             Spacer(modifier = Modifier.height(8.dp))
             Text("XP History", style = MaterialTheme.typography.headlineSmall)
 
-            Button(
-                onClick = {
-                    mutableXPHistory.add(XPEntry("Debug Add", 10))
-                    totalXP += 10 // Update totalXP when adding XP
-                },
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()
-            ) {
-                Text("Add 10 XP")
-            }
-
             LazyColumn {
                 items(mutableXPHistory) { xpEntry ->
                     XPEntryCard(xpEntry)
