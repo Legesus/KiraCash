@@ -3,11 +3,11 @@ package com.example.kiracash
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.AttachMoney
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +39,7 @@ val items = listOf(
     BottomNav("Home", Icons.Rounded.Home, MainDestinations.HOME_ROUTE),
     BottomNav("Budget", Icons.Rounded.AttachMoney, MainDestinations.BUDGET_ROUTE),
     BottomNav("Wallet", Icons.Rounded.Wallet, MainDestinations.DEBT_MENU_ROUTE),
-    BottomNav("Transxn", Icons.Rounded.QrCode, MainDestinations.QR_MENU_ROUTE),
+    BottomNav("Transxn", Icons.AutoMirrored.Rounded.ReceiptLong, MainDestinations.QR_MENU_ROUTE),
     BottomNav("Stats", Icons.Rounded.BarChart, MainDestinations.STATISTIC_SCREEN_ROUTE),
     BottomNav("Account", Icons.Rounded.AccountCircle, MainDestinations.ACCOUNT_ROUTE)
 )

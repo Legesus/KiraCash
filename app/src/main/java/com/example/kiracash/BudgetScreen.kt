@@ -12,6 +12,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -46,6 +47,7 @@ fun BudgetScreen(navController: NavHostController) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val missionDao = db.missionDao()
+    val goalSetDao = db.goalSetDao()
 
     var selectedTab by remember { mutableStateOf(BudgetTabs.PixelPlant) }
 
@@ -55,6 +57,9 @@ fun BudgetScreen(navController: NavHostController) {
         Mission(title = "Limit Eating Out", description = "Try not to eat out more than once today.", xpReward = 10, isCompleted = false),
         Mission(title = "Track Spending", description = "Record every expense you make today.", xpReward = 8, isCompleted = false)
     )
+
+    // This is the correct place to collect goals from the database
+    val goalsList by goalSetDao.getAllGoals().collectAsState(initial = emptyList())
 
     // Pixel Plant Data
     val samplePlantName = "Green Buddy"
@@ -130,12 +135,16 @@ fun BudgetScreen(navController: NavHostController) {
                     MissionListWithSwitches(missions = initialMissions) { xpChange ->
                         totalXP += xpChange
                     }
+                // Corrected GoalList call
                 BudgetTabs.Goals ->
-                    GoalList(goals = sampleGoals) { xpChange ->
+                    GoalList(goals = goalsList, onGoalUpdated = { goal ->
+                        // Implementation for updating a goal
+                    }, onGoalDeleted = { goal ->
+                        // Implementation for deleting a goal
+                    }, onXPChange = { xpChange ->
                         totalXP += xpChange
-                        // You can add an XPEntry to xpHistory here if you want
                         xpHistory.add(XPEntry("Goal Reached/Unreached", xpChange))
-                    }
+                    })
             }
         }
     }

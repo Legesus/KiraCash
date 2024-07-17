@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -197,7 +198,7 @@ fun ExtendedButton(
             containerColor = Color(0xFF1DB954),
             modifier = Modifier.padding(bottom = 16.dp)
         ) {
-            Icon(Icons.Filled.Add, contentDescription = "Add", tint = Color.White)
+            Icon(Icons.Rounded.QrCode, contentDescription = "Add", tint = Color.White)
         }
     }
 

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
-@Database(entities = [Receipt::class, Item::class, Wallet::class, WalletItemJoin::class, ReceiptItemJoin::class, PaidItem::class, Mission::class, PersonalItem::class], version = 3, exportSchema = false)
+@Database(entities = [Receipt::class, Item::class, Wallet::class, WalletItemJoin::class, ReceiptItemJoin::class, PaidItem::class, Mission::class, PersonalItem::class, GoalSet::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun receiptDao(): ReceiptDao
     abstract fun itemDao(): ItemDao
@@ -21,6 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun paidItemDao(): PaidItemDao
     abstract fun missionDao(): MissionDao
     abstract fun personalItemDao(): PersonalItemDao // New DAO for Personal Items
+    abstract fun goalSetDao(): GoalSetDao // New DAO for GoalSet
 
     companion object {
         @Volatile
@@ -156,6 +157,14 @@ abstract class AppDatabase : RoomDatabase() {
 
                 // Insert personal items into the database
                 personalItemDao.insertAll(personalItems)
+
+                val goalSetDao = db.goalSetDao()
+                val sampleGoals = listOf(
+                    GoalSet(title = "New Laptop", amountGoal = 1000.0, amountSaved = 750.0, isReached = false),
+                    GoalSet(title = "Vacation", amountGoal = 3000.0, amountSaved = 850.0, isReached = false),
+                    GoalSet(title = "Emergency Fund", amountGoal = 5000.0, amountSaved = 1200.0, isReached = false)
+                )
+                sampleGoals.forEach { goalSetDao.insertGoal(it) }
             }
         }
     }
